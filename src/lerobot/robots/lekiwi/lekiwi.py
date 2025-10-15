@@ -52,7 +52,7 @@ class LeKiwi(Robot):
         super().__init__(config)
         self.config = config
         norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100
-        self.bus = FeetechMotorsBus(
+        self.bus = FeetechMotorsBus(# 设置舵机参数
             port=self.config.port,
             motors={
                 # arm
