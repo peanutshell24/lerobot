@@ -338,49 +338,49 @@ class LeKiwi(Robot):
             "theta.vel": theta,
         }  # m/s and deg/s
 
-    def get_observation(self) -> dict[str, Any]:
+    def get_observation(self) -> dict[str, Any]: #获取观测值
         if not self.is_connected:
             raise DeviceNotConnectedError(f"{self} is not connected.")
 
         # 读取机械臂关节位置
         start = time.perf_counter()
-        arm_pos = self.bus.sync_read("Present_Position", self.arm_motors)
-        base_wheel_vel = self.bus.sync_read("Present_Velocity", self.base_motors)
+        arm_pos = self.bus.sync_read(
+            "Present_Position", #舵机的寄存器地址
+            self.arm_motors #机械臂关节列表
+            )
+        base_wheel_vel = self.bus.sync_read(
+            "Present_Velocity", #速度寄存器地址
+            self.base_motors #原始速度值，不带物理单位
+            )
 
-        base_vel = self._wheel_raw_to_body(
+        base_vel = self._wheel_raw_to_body( #转换原始速度为带物理单位的速度
             base_wheel_vel["base_left_wheel"],
             base_wheel_vel["base_back_wheel"],
             base_wheel_vel["base_right_wheel"],
         )
 
-        arm_state = {f"{k}.pos": v for k, v in arm_pos.items()}
+        arm_state = {f"{k}.pos": v for k, v in arm_pos.items()} #数据格式化 ？
 
-        obs_dict = {**arm_state, **base_vel}
+        obs_dict = {**arm_state, **base_vel} #状态合并
 
-        dt_ms = (time.perf_counter() - start) * 1e3
-        logger.debug(f"{self} read state: {dt_ms:.1f}ms")
+        dt_ms = (time.perf_counter() - start) * 1e3 #记录耗时
+        logger.debug(f"{self} read state: {dt_ms:.1f}ms") 
 
-        # Capture images from cameras
+        # 从摄像头获得图片
         for cam_key, cam in self.cameras.items():
             start = time.perf_counter()
-            obs_dict[cam_key] = cam.async_read()
+            obs_dict[cam_key] = cam.async_read()# 异步读取，不阻塞主线程
             dt_ms = (time.perf_counter() - start) * 1e3
             logger.debug(f"{self} read {cam_key}: {dt_ms:.1f}ms")
 
         return obs_dict
 
-    def send_action(self, action: dict[str, Any]) -> dict[str, Any]:
-        """Command lekiwi to move to a target joint configuration.
+    def send_action(self, action: dict[str, Any]) -> dict[str, Any]: #输入注释
+        """命令 LeKiwi 移动到目标关节配置。
 
-        The relative action magnitude may be clipped depending on the configuration parameter
-        `max_relative_target`. In this case, the action sent differs from original action.
-        Thus, this function always returns the action actually sent.
-
-        Raises:
-            RobotDeviceNotConnectedError: if robot is not connected.
-
-        Returns:
-            np.ndarray: the action sent to the motors, potentially clipped.
+        相对动作幅度可能会根据配置参数 `max_relative_target` 被裁剪。
+        在这种情况下，实际发送的动作与原始动作不同。
+        因此，此函数始终返回实际发送的动作。
         """
         if not self.is_connected:
             raise DeviceNotConnectedError(f"{self} is not connected.")
@@ -392,15 +392,15 @@ class LeKiwi(Robot):
             base_goal_vel["x.vel"], base_goal_vel["y.vel"], base_goal_vel["theta.vel"]
         )
 
-        # Cap goal position when too far away from present position.
-        # /!\ Slower fps expected due to reading from the follower.
+        # 当距离当前位置太远时，限制目标位置
+        # /!\ 由于从跟随者读取数据，预计 fps 会降低
         if self.config.max_relative_target is not None:
             present_pos = self.bus.sync_read("Present_Position", self.arm_motors)
             goal_present_pos = {key: (g_pos, present_pos[key]) for key, g_pos in arm_goal_pos.items()}
             arm_safe_goal_pos = ensure_safe_goal_position(goal_present_pos, self.config.max_relative_target)
             arm_goal_pos = arm_safe_goal_pos
 
-        # Send goal position to the actuators
+        # 发送目标位置给执行器
         arm_goal_pos_raw = {k.replace(".pos", ""): v for k, v in arm_goal_pos.items()}
         self.bus.sync_write("Goal_Position", arm_goal_pos_raw)
         self.bus.sync_write("Goal_Velocity", base_wheel_goal_vel)
@@ -411,7 +411,7 @@ class LeKiwi(Robot):
         self.bus.sync_write("Goal_Velocity", dict.fromkeys(self.base_motors, 0), num_retry=5)
         logger.info("Base motors stopped")
 
-    def disconnect(self):
+    def disconnect(self): # 失去连接的处理
         if not self.is_connected:
             raise DeviceNotConnectedError(f"{self} is not connected.")
 
