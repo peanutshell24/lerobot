@@ -342,7 +342,7 @@ class LeKiwi(Robot):
         if not self.is_connected:
             raise DeviceNotConnectedError(f"{self} is not connected.")
 
-        # Read actuators position for arm and vel for base
+        # 读取机械臂关节位置
         start = time.perf_counter()
         arm_pos = self.bus.sync_read("Present_Position", self.arm_motors)
         base_wheel_vel = self.bus.sync_read("Present_Velocity", self.base_motors)
