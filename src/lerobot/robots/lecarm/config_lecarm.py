@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# 该文件用于子类化机器人接口，下面会详细注释
 from dataclasses import dataclass, field
 
 from lerobot.cameras.configs import CameraConfig, Cv2Rotation
@@ -19,7 +20,7 @@ from lerobot.cameras.opencv.configuration_opencv import OpenCVCameraConfig
 
 from ..config import RobotConfig
 
-
+#########《《《这一部分代码指定机器人的基础配置类》》》##############（start）
 def lecarm_cameras_config() -> dict[str, CameraConfig]: # 定义摄像头的类型还有串口地址
     return {
         "front": OpenCVCameraConfig(
@@ -47,8 +48,9 @@ class LecarmConfig(RobotConfig):
 
     # Set to `True` for backward compatibility with previous policies/dataset
     use_degrees: bool = False
+#########《《《这一部分代码指定机器人的基础配置类》》》##############（end）
 
-
+#########《《《这一部分代码指定机器人的一些特殊需求配置，希望可以随时能够修改》》》##############（start）
 @dataclass
 class LecarmHostConfig:
     # Network Configuration
@@ -63,8 +65,9 @@ class LecarmHostConfig:
 
     # If robot jitters decrease the frequency and monitor cpu load with `top` in cmd
     max_loop_freq_hz: int = 30
+#########《《《这一部分代码指定机器人的一些特殊需求配置，希望可以随时能够修改》》》##############（end）
 
-
+#########《《《这一部分代码是客户端模式的机器人配置类》》》##############（start）
 @RobotConfig.register_subclass("lecarm_client")
 @dataclass
 class LecarmClientConfig(RobotConfig):
@@ -94,3 +97,4 @@ class LecarmClientConfig(RobotConfig):
 
     polling_timeout_ms: int = 15
     connect_timeout_s: int = 5
+#########《《《这一部分代码是客户端模式的机器人配置类》》》##############（end）

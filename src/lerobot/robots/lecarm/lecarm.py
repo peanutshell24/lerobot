@@ -63,20 +63,20 @@ class Lecarm(Robot):
             port=self.config.port,  # 串口端口
             motors={
                 # 第一个机械臂电机
-                "arm1_shoulder_pan": Motor(1, "sts3215", norm_mode_body),
-                "arm1_shoulder_lift": Motor(2, "sts3215", norm_mode_body),
-                "arm1_elbow_flex": Motor(3, "sts3215", norm_mode_body),
-                "arm1_wrist_flex": Motor(4, "sts3215", norm_mode_body),
-                "arm1_wrist_roll": Motor(5, "sts3215", norm_mode_body),
-                "arm1_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100),
+                "arm_right_shoulder_pan": Motor(1, "sts3215", norm_mode_body),
+                "arm_right_shoulder_lift": Motor(2, "sts3215", norm_mode_body),
+                "arm_right_elbow_flex": Motor(3, "sts3215", norm_mode_body),
+                "arm_right_wrist_flex": Motor(4, "sts3215", norm_mode_body),
+                "arm_right_wrist_roll": Motor(5, "sts3215", norm_mode_body),
+                "arm_right_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100),
                 
                 # 第二个机械臂电机
-                "arm2_shoulder_pan": Motor(7, "sts3215", norm_mode_body),
-                "arm2_shoulder_lift": Motor(8, "sts3215", norm_mode_body),
-                "arm2_elbow_flex": Motor(9, "sts3215", norm_mode_body),
-                "arm2_wrist_flex": Motor(10, "sts3215", norm_mode_body),
-                "arm2_wrist_roll": Motor(11, "sts3215", norm_mode_body),
-                "arm2_gripper": Motor(12, "sts3215", MotorNormMode.RANGE_0_100),
+                "arm_left_shoulder_pan": Motor(7, "sts3215", norm_mode_body),
+                "arm_left_shoulder_lift": Motor(8, "sts3215", norm_mode_body),
+                "arm_left_elbow_flex": Motor(9, "sts3215", norm_mode_body),
+                "arm_left_wrist_flex": Motor(10, "sts3215", norm_mode_body),
+                "arm_left_wrist_roll": Motor(11, "sts3215", norm_mode_body),
+                "arm_left_gripper": Motor(12, "sts3215", MotorNormMode.RANGE_0_100),
                 
                 # 底盘电机 - 3个全向轮
                 #"base_left_wheel": Motor(13, "sts3215", MotorNormMode.RANGE_M100_100),
@@ -98,12 +98,20 @@ class Lecarm(Robot):
         """定义状态观测的特征类型字典（关节位置和底盘速度）"""
         return dict.fromkeys(
             (
-                "arm_shoulder_pan.pos",  # 肩部平移关节位置
-                "arm_shoulder_lift.pos", # 肩部抬升关节位置
-                "arm_elbow_flex.pos",    # 肘部弯曲关节位置
-                "arm_wrist_flex.pos",    # 腕部弯曲关节位置
-                "arm_wrist_roll.pos",    # 腕部旋转关节位置
-                "arm_gripper.pos",       # 夹爪位置
+                "arm_right_shoulder_pan.pos",  # 右边肩部平移关节位置
+                "arm_right_shoulder_lift.pos", # 右边肩部抬升关节位置
+                "arm_right_elbow_flex.pos",    # 右边肘部弯曲关节位置
+                "arm_right_wrist_flex.pos",    # 右边腕部弯曲关节位置
+                "arm_right_wrist_roll.pos",    # 右边腕部旋转关节位置
+                "arm_right_gripper.pos",       # 右边夹爪位置
+
+                "arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
+                "arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
+                "arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
+                "arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
+                "arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
+                "arm_left_gripper.pos",       # 左边夹爪位置
+
                 #"x.vel",                 # X轴速度（前进/后退）
                 #"y.vel",                 # Y轴速度（左右平移）
                 #"theta.vel",             # 旋转角速度
