@@ -79,9 +79,9 @@ class Lecarm(Robot):
                 #"arm_left_gripper": Motor(12, "sts3215", MotorNormMode.RANGE_0_100),
                 
                 # 底盘电机 - 3个全向轮
-                "base_left_wheel": Motor(13, "sts3215", MotorNormMode.RANGE_M100_100),
-                "base_back_wheel": Motor(14, "sts3215", MotorNormMode.RANGE_M100_100),
-                "base_right_wheel": Motor(15, "sts3215", MotorNormMode.RANGE_M100_100),
+                "base_left_wheel": Motor(7, "sts3215", MotorNormMode.RANGE_M100_100),
+                "base_back_wheel": Motor(8, "sts3215", MotorNormMode.RANGE_M100_100),
+                "base_right_wheel": Motor(9, "sts3215", MotorNormMode.RANGE_M100_100),
             },
             calibration=self.calibration,  # 校准数据
         )
