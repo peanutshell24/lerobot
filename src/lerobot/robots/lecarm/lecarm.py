@@ -71,12 +71,12 @@ class Lecarm(Robot):
                 "arm_right_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100),
                 
                 # 第二个机械臂电机
-                "arm_left_shoulder_pan": Motor(7, "sts3215", norm_mode_body),
-                "arm_left_shoulder_lift": Motor(8, "sts3215", norm_mode_body),
-                "arm_left_elbow_flex": Motor(9, "sts3215", norm_mode_body),
-                "arm_left_wrist_flex": Motor(10, "sts3215", norm_mode_body),
-                "arm_left_wrist_roll": Motor(11, "sts3215", norm_mode_body),
-                "arm_left_gripper": Motor(12, "sts3215", MotorNormMode.RANGE_0_100),
+                #"arm_left_shoulder_pan": Motor(7, "sts3215", norm_mode_body),
+                #"arm_left_shoulder_lift": Motor(8, "sts3215", norm_mode_body),
+                #"arm_left_elbow_flex": Motor(9, "sts3215", norm_mode_body),
+                #"arm_left_wrist_flex": Motor(10, "sts3215", norm_mode_body),
+                #"arm_left_wrist_roll": Motor(11, "sts3215", norm_mode_body),
+                #"arm_left_gripper": Motor(12, "sts3215", MotorNormMode.RANGE_0_100),
                 
                 # 底盘电机 - 3个全向轮
                 #"base_left_wheel": Motor(13, "sts3215", MotorNormMode.RANGE_M100_100),

@@ -17,7 +17,7 @@
 import time  # 导入时间模块用于计时和控制循环频率
 
 # 从各模块导入所需的类和配置
-from lerobot.robots.lekiwi import LeKiwiClient, LeKiwiClientConfig  # LeKiwi机器人客户端及配置
+from lerobot.robots.lecarm import LecarmClient, LecarmClientConfig  # Lecarm机器人客户端及配置
 from lerobot.teleoperators.keyboard.teleop_keyboard import KeyboardTeleop, KeyboardTeleopConfig  # 键盘遥操作
 from lerobot.teleoperators.so100_leader import SO100Leader, SO100LeaderConfig  # SO100机械臂控制器
 from lerobot.utils.robot_utils import busy_wait  # 精确等待工具函数
@@ -28,7 +28,7 @@ FPS = 30  # 设置控制循环频率为30帧/秒
 # 创建机器人配置对象
 # remote_ip: 机器人主机的IP地址
 # id: 机器人实例的唯一标识符
-robot_config = LeKiwiClientConfig(remote_ip="172.18.134.136", id="my_lekiwi")
+robot_config = LecarmClientConfig(remote_ip="172.18.134.136", id="my_lecarm")
 
 # 创建SO100机械臂控制器配置
 # port: 机械臂控制器的串口设备路径
@@ -40,22 +40,22 @@ teleop_arm_config = SO100LeaderConfig(port="/dev/tty.usbmodem585A0077581", id="m
 keyboard_config = KeyboardTeleopConfig(id="my_laptop_keyboard")
 
 # 实例化机器人客户端对象
-robot = LeKiwiClient(robot_config)
+robot = LecarmClient(robot_config)
 # 实例化SO100机械臂控制器
 leader_arm = SO100Leader(teleop_arm_config)
 # 实例化键盘控制器
 keyboard = KeyboardTeleop(keyboard_config)
 
 # 连接到各设备
-# 注意：运行此脚本前需确保LeKiwi机器人主机上已运行服务脚本：
-# `python -m lerobot.robots.lekiwi.lekiwi_host --robot.id=my_awesome_kiwi`
+# 注意：运行此脚本前需确保Lecarm机器人主机上已运行服务脚本：
+# `python -m lerobot.robots.lecarm.lecarm_host --robot.id=my_awesome_kiwi`
 robot.connect()        # 连接机器人
 leader_arm.connect()   # 连接机械臂控制器
 keyboard.connect()     # 连接键盘控制器
 
 # 初始化rerun可视化工具
 # session_name: 可视化会话的名称
-init_rerun(session_name="lekiwi_teleop")
+init_rerun(session_name="lecarm_teleop")
 
 # 检查所有设备是否成功连接
 if not robot.is_connected or not leader_arm.is_connected or not keyboard.is_connected:

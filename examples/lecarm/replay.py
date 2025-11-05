@@ -17,8 +17,8 @@
 import time
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
-from lerobot.robots.lekiwi.config_lekiwi import LeKiwiClientConfig
-from lerobot.robots.lekiwi.lekiwi_client import LeKiwiClient
+from lerobot.robots.lecarm.config_lecarm import LecarmClientConfig
+from lerobot.robots.lecarm.lecarm_client import LecarmClient
 from lerobot.utils.constants import ACTION
 from lerobot.utils.robot_utils import busy_wait
 from lerobot.utils.utils import log_say
@@ -26,10 +26,10 @@ from lerobot.utils.utils import log_say
 EPISODE_IDX = 0
 
 # Initialize the robot config
-robot_config = LeKiwiClientConfig(remote_ip="172.18.134.136", id="lekiwi")
+robot_config = LecarmClientConfig(remote_ip="172.18.134.136", id="lecarm")
 
 # Initialize the robot
-robot = LeKiwiClient(robot_config)
+robot = LecarmClient(robot_config)
 
 # Fetch the dataset to replay
 dataset = LeRobotDataset("<hf_username>/<dataset_repo_id>", episodes=[EPISODE_IDX])

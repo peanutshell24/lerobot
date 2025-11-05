@@ -172,8 +172,8 @@ def main():
         # 处理键盘中断（Ctrl+C）
         print("Keyboard interrupt received. Exiting...")
     finally:
-        # 无论是否发生异常，都执行清理操作
-        print("Shutting down Lekiwi Host.")
+        # 无论是否发生异常， 执行清理操作
+        print("Shutting down Lecarm Host.")
         # 断开机器人连接
         robot.disconnect()
         # 断开主机连接
