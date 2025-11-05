@@ -79,9 +79,9 @@ class Lecarm(Robot):
                 #"arm_left_gripper": Motor(12, "sts3215", MotorNormMode.RANGE_0_100),
                 
                 # 底盘电机 - 3个全向轮
-                #"base_left_wheel": Motor(13, "sts3215", MotorNormMode.RANGE_M100_100),
-                #"base_back_wheel": Motor(14, "sts3215", MotorNormMode.RANGE_M100_100),
-                #"base_right_wheel": Motor(15, "sts3215", MotorNormMode.RANGE_M100_100),
+                "base_left_wheel": Motor(13, "sts3215", MotorNormMode.RANGE_M100_100),
+                "base_back_wheel": Motor(14, "sts3215", MotorNormMode.RANGE_M100_100),
+                "base_right_wheel": Motor(15, "sts3215", MotorNormMode.RANGE_M100_100),
             },
             calibration=self.calibration,  # 校准数据
         )
@@ -105,16 +105,16 @@ class Lecarm(Robot):
                 "arm_right_wrist_roll.pos",    # 右边腕部旋转关节位置
                 "arm_right_gripper.pos",       # 右边夹爪位置
 
-                "arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
-                "arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
-                "arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
-                "arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
-                "arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
-                "arm_left_gripper.pos",       # 左边夹爪位置
+                #"arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
+                #"arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
+                #"arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
+                #"arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
+                #"arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
+                #"arm_left_gripper.pos",       # 左边夹爪位置
 
-                #"x.vel",                 # X轴速度（前进/后退）
-                #"y.vel",                 # Y轴速度（左右平移）
-                #"theta.vel",             # 旋转角速度
+                "x.vel",                 # X轴速度（前进/后退）
+                "y.vel",                 # Y轴速度（左右平移）
+                "theta.vel",             # 旋转角速度
             ),
             float,  # 所有特征都是浮点数类型
         )
