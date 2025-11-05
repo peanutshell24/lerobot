@@ -28,12 +28,12 @@ FPS = 30  # 设置控制循环频率为30帧/秒
 # 创建机器人配置对象
 # remote_ip: 机器人主机的IP地址
 # id: 机器人实例的唯一标识符
-robot_config = LeKiwiClientConfig(remote_ip="172.18.134.136", id="my_lekiwi")
+robot_config = LeKiwiClientConfig(remote_ip="192.168.1.21", id="my_lekiwi")
 
 # 创建SO100机械臂控制器配置
 # port: 机械臂控制器的串口设备路径
 # id: 控制器实例的唯一标识符
-teleop_arm_config = SO100LeaderConfig(port="/dev/tty.usbmodem585A0077581", id="my_awesome_leader_arm")
+teleop_arm_config = SO100LeaderConfig(port="/dev/ttyACM0", id="my_awesome_leader_arm")
 
 # 创建键盘遥操作配置
 # id: 键盘控制实例的唯一标识符
