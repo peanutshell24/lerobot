@@ -200,7 +200,7 @@ class Lecarm(Robot):
 
         # 分类电机：全旋转电机和未知范围电机
         full_turn_motor = [
-            motor for motor in motors if any(keyword in motor for keyword in ["wheel", "wrist"])
+            motor for motor in motors if any(keyword in motor for keyword in ["wheel"])
         ]
         unknown_range_motors = [motor for motor in motors if motor not in full_turn_motor]
 
