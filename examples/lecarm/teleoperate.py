@@ -33,7 +33,7 @@ robot_config = LecarmClientConfig(remote_ip="192.168.1.21", id="my_awesome_carm"
 # 创建SO100机械臂控制器配置
 # port: 机械臂控制器的串口设备路径
 # id: 控制器实例的唯一标识符
-teleop_arm_config = SO100LeaderConfig(port="/dev/ttyACM0", id="my_awesome_leader_arm_lecarm")
+teleop_arm_config = SO100LeaderConfig(port="/dev/ttyACM0", id="my_awesome_leader_arm")
 
 # 创建键盘遥操作配置
 # id: 键盘控制实例的唯一标识符
