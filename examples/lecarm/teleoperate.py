@@ -73,7 +73,7 @@ while True:  # 主控制循环
     # 从机械臂控制器获取动作
     arm_action = leader_arm.get_action()
     # 为机械臂动作添加"arm_"前缀的命名空间
-    arm_action = {f"arm_{k}": v for k, v in arm_action.items()}
+    arm_action = {f"arm_right_{k}": v for k, v in arm_action.items()}
     
     # 从键盘获取按键输入
     keyboard_keys = keyboard.get_action()
