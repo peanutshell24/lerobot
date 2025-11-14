@@ -63,12 +63,19 @@ class Lecarm(Robot):
             port=self.config.port,  # 串口端口
             motors={
                 # 第一个机械臂电机
-                "arm_right_shoulder_pan": Motor(1, "sts3215", norm_mode_body),
-                "arm_right_shoulder_lift": Motor(2, "sts3215", norm_mode_body),
-                "arm_right_elbow_flex": Motor(3, "sts3215", norm_mode_body),
-                "arm_right_wrist_flex": Motor(4, "sts3215", norm_mode_body),
-                "arm_right_wrist_roll": Motor(5, "sts3215", norm_mode_body),
-                "arm_right_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100),
+                #"arm_right_shoulder_lift": Motor(2, "sts3215", norm_mode_body),
+                #"arm_right_elbow_flex": Motor(3, "sts3215", norm_mode_body),
+                #"arm_right_wrist_flex": Motor(4, "sts3215", norm_mode_body),
+                #"arm_right_wrist_roll": Motor(5, "sts3215", norm_mode_body),
+                #"arm_right_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100),
+
+                # 机械臂电机 - 6个关节
+                "arm_shoulder_pan": Motor(1, "sts3215", norm_mode_body),      # 肩部平移关节
+                "arm_shoulder_lift": Motor(2, "sts3215", norm_mode_body),     # 肩部抬升关节
+                "arm_elbow_flex": Motor(3, "sts3215", norm_mode_body),        # 肘部弯曲关节
+                "arm_wrist_flex": Motor(4, "sts3215", norm_mode_body),        # 腕部弯曲关节
+                "arm_wrist_roll": Motor(5, "sts3215", norm_mode_body),         # 腕部旋转关节
+                "arm_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100), # 夹爪（特殊范围0-100）
                 
                 # 第二个机械臂电机
                 #"arm_left_shoulder_pan": Motor(7, "sts3215", norm_mode_body),
