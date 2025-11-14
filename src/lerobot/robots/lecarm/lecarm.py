@@ -62,7 +62,7 @@ class Lecarm(Robot):
         self.bus = FeetechMotorsBus(
             port=self.config.port,  # 串口端口
             motors={
-                # 机械臂电机 - 6个关节
+                # 第一条机械臂的定义
                 "arm_right_shoulder_pan": Motor(1, "sts3215", norm_mode_body),      # 肩部平移关节
                 "arm_right_shoulder_lift": Motor(2, "sts3215", norm_mode_body),     # 肩部抬升关节
                 "arm_right_elbow_flex": Motor(3, "sts3215", norm_mode_body),        # 肘部弯曲关节
