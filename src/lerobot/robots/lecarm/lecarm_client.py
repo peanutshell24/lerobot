@@ -86,15 +86,23 @@ class LecarmClient(Robot):
         """定义状态特征的类型（浮点数）"""
         return dict.fromkeys(
             (
-                "arm_shoulder_pan.pos",  # 肩部平移位置
-                "arm_shoulder_lift.pos",  # 肩部提升位置
-                "arm_elbow_flex.pos",    # 肘部弯曲位置
-                "arm_wrist_flex.pos",    # 手腕弯曲位置
-                "arm_wrist_roll.pos",    # 手腕旋转位置
-                "arm_gripper.pos",       # 夹爪位置
-                "x.vel",                 # X轴速度
-                "y.vel",                 # Y轴速度
-                "theta.vel",             # 旋转速度
+                "arm_right_shoulder_pan.pos",  # 右边肩部平移关节位置
+                "arm_right_shoulder_lift.pos", # 右边肩部抬升关节位置
+                "arm_right_elbow_flex.pos",    # 右边肘部弯曲关节位置
+                "arm_right_wrist_flex.pos",    # 右边腕部弯曲关节位置
+                "arm_right_wrist_roll.pos",    # 右边腕部旋转关节位置
+                "arm_right_gripper.pos",       # 右边夹爪位置
+
+                #"arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
+                #"arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
+                #"arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
+                #"arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
+                #"arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
+                #"arm_left_gripper.pos",       # 左边夹爪位置
+
+                "x.vel",                 # X轴速度（前进/后退）
+                "y.vel",                 # Y轴速度（左右平移）
+                "theta.vel",             # 旋转角速度
             ),
             float,  # 所有状态值都是浮点数
         )
