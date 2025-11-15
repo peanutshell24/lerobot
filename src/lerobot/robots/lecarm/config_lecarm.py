@@ -30,7 +30,7 @@ def lecarm_cameras_config() -> dict[str, CameraConfig]: # 定义摄像头的类�
             index_or_path="/dev/video2", fps=30, width=480, height=640, rotation=Cv2Rotation.ROTATE_90
         ),
         "wrist_right": OpenCVCameraConfig(
-            index_or_path="/dev/video2", fps=30, width=480, height=640, rotation=Cv2Rotation.ROTATE_90
+            index_or_path="/dev/video4", fps=30, width=480, height=640, rotation=Cv2Rotation.ROTATE_90
         ),
     }
 
@@ -38,7 +38,8 @@ def lecarm_cameras_config() -> dict[str, CameraConfig]: # 定义摄像头的类�
 @RobotConfig.register_subclass("lecarm")
 @dataclass
 class LecarmConfig(RobotConfig):
-    port: str = "/dev/ttyACM0"  # 默认串口地址
+    left_port:  str = "/dev/ttyACM0"    # 默认串口地址
+    right_port: str = "/dev/ttyACM1"    # 默认串口地址
 
     disable_torque_on_disconnect: bool = True
 
