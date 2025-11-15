@@ -59,44 +59,46 @@ class Lecarm(Robot):
         norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100
         
         # 创建Feetech电机总线，包含所有电机配置
-        self.bus = FeetechMotorsBus(
+        self.left_bus = FeetechMotorsBus(
             port=self.config.port,  # 串口端口
             motors={
-                # 第一条机械臂的定义
-                "arm_right_shoulder_pan": Motor(1, "sts3215", norm_mode_body),      # 肩部平移关节
-                "arm_right_shoulder_lift": Motor(2, "sts3215", norm_mode_body),     # 肩部抬升关节
-                "arm_right_elbow_flex": Motor(3, "sts3215", norm_mode_body),        # 肘部弯曲关节
-                "arm_right_wrist_flex": Motor(4, "sts3215", norm_mode_body),        # 腕部弯曲关节
+                # 第一个机械臂定义
+                "arm_left_shoulder_pan": Motor(1, "sts3215", norm_mode_body),      # 肩部平移关节
+                "arm_left_shoulder_lift": Motor(2, "sts3215", norm_mode_body),     # 肩部抬升关节
+                "arm_left_elbow_flex": Motor(3, "sts3215", norm_mode_body),        # 肘部弯曲关节
+                "arm_left_wrist_flex": Motor(4, "sts3215", norm_mode_body),        # 腕部弯曲关节
+                "arm_left_wrist_roll": Motor(5, "sts3215", norm_mode_body),        # 腕部旋转关节
+                "arm_left_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100),# 夹爪（特殊范围0-100）
+
+                # 底盘电机 - 4个麦克纳姆轮
+                "base_front_left_wheel": Motor(7, "sts3215", MotorNormMode.RANGE_M100_100), #底盘左前轮
+                "base_front_right_wheel": Motor(8, "sts3215", MotorNormMode.RANGE_M100_100),#底盘右前轮
+                "base_rear_left_wheel": Motor(9, "sts3215", MotorNormMode.RANGE_M100_100),  #底盘左后轮
+                "base_rear_right_wheel": Motor(10, "sts3215", MotorNormMode.RANGE_M100_100),#底盘右后轮
+                
+            },
+            calibration=self.calibration,  # 校准数据
+        )
+
+        self.right_bus = FeetechMotorsBus(
+            port=self.config.port,  # 串口端口
+            motors={                
+                # 第二条机械臂的定义
+                "arm_right_shoulder_pan": Motor(1, "sts3215", norm_mode_body),       # 肩部平移关节
+                "arm_right_shoulder_lift": Motor(2, "sts3215", norm_mode_body),      # 肩部抬升关节
+                "arm_right_elbow_flex": Motor(3, "sts3215", norm_mode_body),         # 肘部弯曲关节
+                "arm_right_wrist_flex": Motor(4, "sts3215", norm_mode_body),         # 腕部弯曲关节
                 "arm_right_wrist_roll": Motor(5, "sts3215", norm_mode_body),         # 腕部旋转关节
                 "arm_right_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100), # 夹爪（特殊范围0-100）
-
-                # 机械臂电机 - 6个关节
-                #"arm_shoulder_pan": Motor(1, "sts3215", norm_mode_body),      # 肩部平移关节
-                #"arm_shoulder_lift": Motor(2, "sts3215", norm_mode_body),     # 肩部抬升关节
-                #"arm_elbow_flex": Motor(3, "sts3215", norm_mode_body),        # 肘部弯曲关节
-                #"arm_wrist_flex": Motor(4, "sts3215", norm_mode_body),        # 腕部弯曲关节
-                #"arm_wrist_roll": Motor(5, "sts3215", norm_mode_body),         # 腕部旋转关节
-                #"arm_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100), # 夹爪（特殊范围0-100）
                 
-                # 第二个机械臂电机
-                #"arm_left_shoulder_pan": Motor(7, "sts3215", norm_mode_body),
-                #"arm_left_shoulder_lift": Motor(8, "sts3215", norm_mode_body),
-                #"arm_left_elbow_flex": Motor(9, "sts3215", norm_mode_body),
-                #"arm_left_wrist_flex": Motor(10, "sts3215", norm_mode_body),
-                #"arm_left_wrist_roll": Motor(11, "sts3215", norm_mode_body),
-                #"arm_left_gripper": Motor(12, "sts3215", MotorNormMode.RANGE_0_100),
-                
-                # 底盘电机 - 3个全向轮
-                "base_left_wheel": Motor(7, "sts3215", MotorNormMode.RANGE_M100_100),
-                "base_back_wheel": Motor(8, "sts3215", MotorNormMode.RANGE_M100_100),
-                "base_right_wheel": Motor(9, "sts3215", MotorNormMode.RANGE_M100_100),
             },
             calibration=self.calibration,  # 校准数据
         )
         
         # 按功能分类电机名称
-        self.arm_motors = [motor for motor in self.bus.motors if motor.startswith("arm")]    # 机械臂电机列表
-        self.base_motors = [motor for motor in self.bus.motors if motor.startswith("base")]  # 底盘电机列表
+        self.right_arm_motors = [motor for motor in self.right_bus.motors if motor.startswith("arm_right")]    # 机械右臂电机列表
+        self.left_arm_motors  = [motor for motor in self.left_bus.motors if motor.startswith("arm_left")]    # 机械右臂电机列表
+        self.base_motors = [motor for motor in self.left_bus.motors if motor.startswith("base")]  # 底盘电机列表
         
         # 根据配置创建摄像头对象
         self.cameras = make_cameras_from_configs(config.cameras)
@@ -113,12 +115,12 @@ class Lecarm(Robot):
                 "arm_right_wrist_roll.pos",    # 右边腕部旋转关节位置
                 "arm_right_gripper.pos",       # 右边夹爪位置
 
-                #"arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
-                #"arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
-                #"arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
-                #"arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
-                #"arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
-                #"arm_left_gripper.pos",       # 左边夹爪位置
+                "arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
+                "arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
+                "arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
+                "arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
+                "arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
+                "arm_left_gripper.pos",       # 左边夹爪位置
 
                 "x.vel",                 # X轴速度（前进/后退）
                 "y.vel",                 # Y轴速度（左右平移）
@@ -146,16 +148,18 @@ class Lecarm(Robot):
 
     @property
     def is_connected(self) -> bool:
-        """检查机器人是否已连接（电机总线和所有摄像头都连接）"""
-        return self.bus.is_connected and all(cam.is_connected for cam in self.cameras.values())
+        """检查机器人是否已连接（所有电机总线和所有摄像头都连接）"""
+        cam_ready = all(cam.is_connected for cam in self.cameras.values())
+        return self.left_bus.is_connected and (self.right_bus.is_connected if self.right_bus else True) and cam_ready
 
     def connect(self, calibrate: bool = True) -> None:
         """连接机器人并可选进行校准"""
         if self.is_connected:
             raise DeviceAlreadyConnectedError(f"{self} already connected")
 
-        # 连接电机总线
-        self.bus.connect()
+        # 连接所有总线
+        self.left_bus.connect()
+        self.right_bus.connect()
         
         # 如果未校准且需要校准，则执行校准流程
         if not self.is_calibrated and calibrate:
@@ -172,10 +176,12 @@ class Lecarm(Robot):
         self.configure()
         logger.info(f"{self} connected.")
 
+        #此处可以添加一些初始化的内容，比如位置归零
+
     @property
     def is_calibrated(self) -> bool:
         """检查电机是否已校准"""
-        return self.bus.is_calibrated
+        return self.left_bus.is_calibrated #不知该方法有什么作用
 
     def calibrate(self) -> None:
         """执行电机校准流程"""
@@ -185,57 +191,98 @@ class Lecarm(Robot):
                 f"按回车键使用与ID {self.id} 关联的提供的校准文件，或输入'c'并按回车键运行校准: "
             )
             if user_input.strip().lower() != "c":
+                
                 logger.info(f"将与ID {self.id} 关联的校准文件写入电机")
-                self.bus.write_calibration(self.calibration)
+                calib_left = {k: v for k, v in self.calibration.items() if k in self.left_bus.motors}
+                self.left_bus.write_calibration(calib_left, cache=False)
+                self.left_bus.calibration = calib_left
+                # 如果有right_bus的话才执行第二个校准
+                if getattr(self, "right_bus", None):
+                    calib_right = {k: v for k, v in self.calibration.items() if k in self.right_bus.motors}
+                    self.right_bus.write_calibration(calib_right, cache=False)
+                    self.right_bus.calibration = calib_right
+
                 return
                 
-        logger.info(f"\n运行 {self} 的校准")
+        logger.info(f"\n运行 {self} 的双总线校准")
 
-        # 获取所有电机名称
-        motors = self.arm_motors + self.base_motors
+        if not getattr(self, "left_arm_motors", None):  # 改为宽松检测
+            logger.warning("左总线未配置，跳过左臂校准")
+        if not getattr(self, "right_arm_motors", None): # 改为宽松检测
+            logger.warning("右总线未配置，跳过右臂校准")
 
-        # 禁用机械臂扭矩以便手动移动
-        self.bus.disable_torque(self.arm_motors)
-        for name in self.arm_motors:
-            self.bus.write("Operating_Mode", name, OperatingMode.POSITION.value)
+        # 获取所有电机的名称
+        left_motors = self.left_arm_motors + self.base_motors
+        right_motors= self.right_arm_motors
+
+        # 禁用左机械臂扭矩以便手动移动
+        self.left_bus.disable_torque(self.left_arm_motors)
+        for name in self.left_arm_motors:
+            self.left_bus.write("Operating_Mode", name, OperatingMode.POSITION.value)
 
         # 提示用户将机器人移动到运动范围中间位置
-        input("将机器人移动到其运动范围的中间位置并按回车键....")
-        homing_offsets = self.bus.set_half_turn_homings(self.arm_motors)
+        input("将机器人左手移动到其运动范围的中间位置并按回车键....")
+        left_homing_offsets = self.left_bus.set_half_turn_homings(self.left_arm_motors)
 
         # 底盘电机不需要归零偏移
-        homing_offsets.update(dict.fromkeys(self.base_motors, 0))
+        left_homing_offsets.update(dict.fromkeys(self.base_motors, 0))
 
         # 分类电机：全旋转电机和未知范围电机
-        full_turn_motor = [
-            motor for motor in motors if any(keyword in motor for keyword in ["wheel"])
-        ]
-        unknown_range_motors = [motor for motor in motors if motor not in full_turn_motor]
+        full_turn_motor = [motor for motor in left_motors if any(keyword in motor for keyword in ["wheel"])]
+        unknown_range_motors = [motor for motor in left_motors if motor not in full_turn_motor]
+        print(f"依次移动所有机械臂关节，（除了 '{full_turn_motor}'）通过其整个运动范围。\n记录位置。按回车键停止...")
 
-        print(
-            f"依次移动所有机械臂关节（除了 '{full_turn_motor}'）通过其整个运动范围。\n记录位置。按回车键停止..."
-        )
         # 记录未知范围电机的运动范围
-        range_mins, range_maxes = self.bus.record_ranges_of_motion(unknown_range_motors)
-        
-        # 设置全旋转电机的范围（0-4095，对应0-360度）
-        for name in full_turn_motor:
-            range_mins[name] = 0
-            range_maxes[name] = 4095
+        l_range_mins, l_range_maxes = self.left_bus.record_ranges_of_motion(unknown_range_motors)
 
-        # 创建校准数据字典 现在这里是单臂的校准，需要修改成双臂
-        self.calibration = {}
-        for name, motor in self.bus.motors.items():
-            self.calibration[name] = MotorCalibration(
+        # 设置全旋转电机的范围（0-4095，对应0-360度）这个只针对底盘的四个电机
+        for name in full_turn_motor:
+            l_range_mins[name] = 0
+            l_range_maxes[name] = 4095
+
+        # 创建右臂的空字典
+        right_homing_offsets = {}
+        r_range_mins, r_range_maxes = {}, {}
+
+        # 检测到右臂存在的话，执行右机械臂的校准，流程跟左臂一致
+        if getattr(self, "right_bus", None) and getattr(self, "right_arm_motors", None):
+            self.right_bus.disable_torque(self.right_arm_motors)
+            for name in self.right_arm_motors:
+                self.right_bus.write("Operating_Mode", name, OperatingMode.POSITION.value)
+
+            input("将机器人右手移动到其运动范围的中间位置并按回车键....")
+            right_homing_offsets = self.right_bus.set_half_turn_homings(self.right_arm_motors)
+
+            print("依次移动所有机械臂关节，通过其整个运动范围。\n记录位置。按回车键停止...")
+            r_range_mins, r_range_maxes = self.right_bus.record_ranges_of_motion(self.right_arm_motors)
+
+        # 创建校准数据字典
+        self.left_calibration = {}
+        self.right_calibration = {}
+
+        for name, motor in self.left_bus.motors.items():
+            self.left_calibration[name] = MotorCalibration(
                 id=motor.id,                # 电机ID
                 drive_mode=0,               # 驱动模式
-                homing_offset=homing_offsets[name],  # 归零偏移
-                range_min=range_mins[name],  # 最小范围
-                range_max=range_maxes[name], # 最大范围
+                homing_offset=left_homing_offsets.get(name, 0), # 归零偏移
+                range_min=l_range_mins.get(name, 0),            # 最小范围
+                range_max=l_range_maxes.get(name, 4095),        # 最大范围
             )
+        if getattr(self, "right_bus", None):
+            for name, motor in self.right_bus.motors.items():
+                self.right_calibration[name] = MotorCalibration(
+                    id=motor.id,                # 电机ID
+                    drive_mode=0,               # 驱动模式
+                    homing_offset=right_homing_offsets.get(name, 0), # 归零偏移
+                    range_min=r_range_mins.get(name, 0),             # 最小范围
+                    range_max=r_range_maxes.get(name, 4095),         # 最大范围
+                )
 
         # 将校准数据写入电机并保存到文件
-        self.bus.write_calibration(self.calibration)
+        self.left_bus.write_calibration(self.left_calibration)
+        self.left_bus.calibration = calib_left
+        if getattr(self, "right_bus", None):
+            self.right_bus.write_calibration(self.right_calibration)
         self._save_calibration()
         print("校准已保存到", self.calibration_fpath)
 
