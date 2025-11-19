@@ -211,7 +211,7 @@ class Lecarm(Robot):
         if not getattr(self, "right_arm_motors", None): # 改为宽松检测
             logger.warning("右总线未配置，跳过右臂校准")
 
-        # 获取所有电机的名称
+        # 获取所有电机的名称，用于分类而已，右bus的电机可以不分类
         left_motors = self.left_arm_motors + self.base_motors
         right_motors= self.right_arm_motors
 
@@ -290,31 +290,48 @@ class Lecarm(Robot):
         """配置电机参数（PID系数、操作模式等）"""
         # 设置机械臂执行器（位置模式）
         # 假设连接时机械臂处于静止位置，可以安全禁用扭矩以运行校准
-        self.bus.disable_torque()
-        self.bus.configure_motors()
+        self.left_bus.disable_torque()
+        self.left_bus.configure_motors()
+        self.right_bus.disable_torque()
+        self.right_bus.configure_motors()
         
         # 配置每个机械臂电机
-        for name in self.arm_motors:
-            self.bus.write("Operating_Mode", name, OperatingMode.POSITION.value)  # 位置模式
-            # 设置P系数为较低值以避免抖动（默认32）
-            self.bus.write("P_Coefficient", name, 16)
+        for name in self.left_arm_motors:
+            self.left_bus.write("Operating_Mode", name, OperatingMode.POSITION.value)  # 位置模式
+            # 设置P系数为较低值以避免抖动（默认16）
+            self.left_bus.write("P_Coefficient", name, 16)
             # 设置I系数和D系数为默认值0和32
-            self.bus.write("I_Coefficient", name, 0)
-            self.bus.write("D_Coefficient", name, 32)
+            self.left_bus.write("I_Coefficient", name, 0)
+            self.left_bus.write("D_Coefficient", name, 32)
+        
+        for name in self.right_arm_motors:
+            self.right_bus.write("Operating_Mode", name, OperatingMode.POSITION.value)  # 位置模式
+            # 设置P系数为较低值以避免抖动（默认16）
+            self.right_bus.write("P_Coefficient", name, 16)
+            # 设置I系数和D系数为默认值0和32
+            self.right_bus.write("I_Coefficient", name, 0)
+            self.right_bus.write("D_Coefficient", name, 32)
 
         # 配置底盘电机为速度模式
         for name in self.base_motors:
-            self.bus.write("Operating_Mode", name, OperatingMode.VELOCITY.value)
+            self.left_bus.write("Operating_Mode", name, OperatingMode.VELOCITY.value)
 
         # 启用所有电机扭矩
-        self.bus.enable_torque()
+        self.left_bus.enable_torque()
+        self.right_bus.enable_torque()
 
+    # 不知此处是否需要修改，先改着试一下
     def setup_motors(self) -> None:
         """设置电机ID（用于初始硬件设置）"""
-        for motor in chain(reversed(self.arm_motors), reversed(self.base_motors)):
+        for motor in chain(reversed(self.left_arm_motors), reversed(self.base_motors)):
             input(f"仅将控制器板连接到 '{motor}' 电机并按回车键。")
-            self.bus.setup_motor(motor)
-            print(f"'{motor}' 电机ID设置为 {self.bus.motors[motor].id}")
+            self.left_bus.setup_motor(motor)
+            print(f"'{motor}' 电机ID设置为 {self.left_bus.motors[motor].id}")
+
+        for motor in chain(reversed(self.right_arm_motors)):
+            input(f"仅将控制器板连接到 '{motor}' 电机并按回车键。")
+            self.right_bus.setup_motor(motor)
+            print(f"'{motor}' 电机ID设置为 {self.right_bus.motors[motor].id}")
 
     @staticmethod
     def _degps_to_raw(degps: float) -> int:
@@ -344,8 +361,9 @@ class Lecarm(Robot):
         x: float,
         y: float,
         theta: float,
-        wheel_radius: float = 0.05,
-        base_radius: float = 0.125,
+        a_constant = 0.075,
+        b_constant = 0.075,
+        wheel_radius: float = 0.08,
         max_raw: int = 3000,
     ) -> dict:
         """
@@ -355,8 +373,9 @@ class Lecarm(Robot):
           x: X轴线性速度 (m/s)
           y: Y轴线性速度 (m/s)
           theta: 旋转角速度 (deg/s)
-          wheel_radius: 每个轮的半径 (米)
-          base_radius: 从旋转中心到每个轮的距离 (米)
+          a_constant: 车体x方向轮轴到车体中心的距离
+          b_constant: 车体y方向轮轴到车体中心的距离
+          wheel_radius: 每个轮的半径 (m)
           max_raw: 每个轮允许的最大原始命令 ( ticks)
         
         返回:
@@ -368,19 +387,22 @@ class Lecarm(Robot):
           - 原始命令是从轮子角速度（deg/s）使用_degps_to_raw()计算的
           - 如果任何命令超过max_raw，所有命令按比例缩小
         """
+        # 计算k常数
+        k_constant = a_constant + b_constant
         # 将旋转速度从deg/s转换为rad/s
         theta_rad = theta * (np.pi / 180.0)
         # 创建机体速度向量 [x, y, theta_rad]
         velocity_vector = np.array([x, y, theta_rad])
 
-        # 定义轮子安装角度（带-90°偏移）
-        angles = np.radians(np.array([240, 0, 120]) - 90)
-        # 构建运动学矩阵：每行将机体速度映射到轮的线速度
-        # 第三列（base_radius）考虑了旋转的影响
-        m = np.array([[np.cos(a), np.sin(a), base_radius] for a in angles])
+        # 构建逆运动学矩阵：将机体速度映射到轮的线速度
+        # vmm意思是Velocity mapping matrix
+        vmm = (np.array([[1,  1, -k_constant],
+                         [1, -1,  k_constant],
+                         [1, -1, -k_constant],
+                         [1,  1,  k_constant]]))
 
         # 计算每个轮的线速度（m/s）然后是其角速度（rad/s）
-        wheel_linear_speeds = m.dot(velocity_vector)
+        wheel_linear_speeds = vmm.dot(velocity_vector)
         wheel_angular_speeds = wheel_linear_speeds / wheel_radius
 
         # 将轮角速度从rad/s转换为deg/s
@@ -398,53 +420,67 @@ class Lecarm(Robot):
         wheel_raw = [self._degps_to_raw(deg) for deg in wheel_degps]
 
         return {
-            "base_left_wheel": wheel_raw[0],
-            "base_back_wheel": wheel_raw[1],
-            "base_right_wheel": wheel_raw[2],
+            "base_front_left_wheel": wheel_raw[0],
+            "base_front_right_wheel": wheel_raw[1],
+            "base_rear_left_wheel": wheel_raw[2],
+            "base_rear_right_wheel": wheel_raw[3],
         }
 
     def _wheel_raw_to_body(
         self,
-        left_wheel_speed,
-        back_wheel_speed,
-        right_wheel_speed,
-        wheel_radius: float = 0.05,
-        base_radius: float = 0.125,
+        front_left_wheel_speed,
+        front_right_wheel_speed,
+        rear_left_wheel_speed,
+        rear_right_wheel_speed,
+        a_constant = 0.075,
+        b_constant = 0.075,
+        wheel_radius: float = 0.08,
     ) -> dict[str, Any]:
         """
         将轮子原始命令反馈转换回机体坐标系速度
         
         参数:
-          wheel_raw: 包含原始轮命令的向量 ("base_left_wheel", "base_back_wheel", "base_right_wheel")
+          wheel_raw: 包含原始轮命令的向量 ("front_left_wheel_speed", "front_right_wheel_speed", "rear_left_wheel_speed","rear_right_wheel_speed")
           wheel_radius: 每个轮的半径 (米)
-          base_radius: 从机器人中心到每个轮的距离 (米)
+          a_constant: 车体x方向轮轴到车体中心的距离
+          b_constant: 车体y方向轮轴到车体中心的距离
         
         返回:
           包含机体速度的字典 (x.vel, y.vel, theta.vel)，单位均为m/s
         """
-
+        # 计算k常数
+        k_constant = a_constant + b_constant
         # 将每个原始命令转换回角速度（deg/s）
         wheel_degps = np.array(
             [
-                self._raw_to_degps(left_wheel_speed),
-                self._raw_to_degps(back_wheel_speed),
-                self._raw_to_degps(right_wheel_speed),
+                self._raw_to_degps(front_left_wheel_speed),
+                self._raw_to_degps(front_right_wheel_speed),
+                self._raw_to_degps(rear_left_wheel_speed),
+                self._raw_to_degps(rear_right_wheel_speed),
             ]
         )
 
-        # 从deg/s转换为rad/s
+        # 把角速度单位 deg/s 转换为 rad/s.
         wheel_radps = wheel_degps * (np.pi / 180.0)
-        # 从角速度计算每个轮的线速度（m/s）
-        wheel_linear_speeds = wheel_radps * wheel_radius
+        # 转换为线速度
+        wheel_linears = wheel_radps * wheel_radius
+        # 定义速度映射的逆矩阵
+        # 提取系数
+        vx_coeff = 0.25
+        vy_coeff = 0.25
+        omega_coeff = 1 / (4 * k_constant)
 
-        # 定义轮子安装角度（带-90°偏移）
-        angles = np.radians(np.array([240, 0, 120]) - 90)
-        m = np.array([[np.cos(a), np.sin(a), base_radius] for a in angles])
-
-        # 解逆运动学：body_velocity = M⁻¹ · wheel_linear_speeds
-        m_inv = np.linalg.inv(m)
-        velocity_vector = m_inv.dot(wheel_linear_speeds)
+        # 轮速转换为车体速度的矩阵
+        vmm_forward = np.array([
+            [vx_coeff,  vx_coeff,  vx_coeff,  vx_coeff],    # v_x 分量
+            [vy_coeff, -vy_coeff, -vy_coeff,  vy_coeff],    # v_y 分量
+            [-omega_coeff, omega_coeff, -omega_coeff, omega_coeff]  # ω 分量
+        ])
+        # 进行关系映射
+        velocity_vector = vmm_forward.dot(wheel_linears)
         x, y, theta_rad = velocity_vector
+
+        # 把角速度单位 rad/s 转换为 deg/s.
         theta = theta_rad * (180.0 / np.pi)
         return {
             "x.vel": x,        # X轴速度 (m/s)
@@ -459,25 +495,31 @@ class Lecarm(Robot):
 
         # 读取机械臂关节位置和底盘轮子速度
         start = time.perf_counter()
-        arm_pos = self.bus.sync_read("Present_Position", self.arm_motors)  # 读取当前位置寄存器
-        base_wheel_vel = self.bus.sync_read("Present_Velocity", self.base_motors)  # 读取当前速度寄存器
+        left_arm_pos = self.left_bus.sync_read("Present_Position", self.left_arm_motors)  # 读取当前位置寄存器
+        base_wheel_vel = self.left_bus.sync_read("Present_Velocity", self.base_motors)  # 读取当前速度寄存器
+        right_arm_pos = self.right_bus.sync_read("Present_Position", self.right_arm_motors)  # 读取当前位置寄存器
 
         # 将轮子原始速度转换为机体坐标系速度
         base_vel = self._wheel_raw_to_body(
-            base_wheel_vel["base_left_wheel"],
-            base_wheel_vel["base_back_wheel"],
-            base_wheel_vel["base_right_wheel"],
+            base_wheel_vel["base_front_left_wheel"],
+            base_wheel_vel["base_front_right_wheel"],
+            base_wheel_vel["base_rear_left_wheel"],
+            base_wheel_vel["base_rear_right_wheel"],
         )
 
         # 格式化机械臂状态数据（添加.pos后缀）
-        arm_state = {f"{k}.pos": v for k, v in arm_pos.items()}
+        left_arm_state = {f"{k}.pos": v for k, v in left_arm_pos.items()}
+        right_arm_state = {f"{k}.pos": v for k, v in right_arm_pos.items()}
 
         # 合并状态数据
-        obs_dict = {**arm_state, **base_vel}
+        obs_dict = {**left_arm_state, **right_arm_state,**base_vel}
 
         # 记录读取耗时
         dt_ms = (time.perf_counter() - start) * 1e3
         logger.debug(f"{self} read state: {dt_ms:.1f}ms")
+
+        # 电流监测
+        self.read_and_check_currents(limit_ma=2000, print_currents=True)
 
         # 从摄像头捕获图像
         for cam_key, cam in self.cameras.items():
@@ -499,33 +541,83 @@ class Lecarm(Robot):
             raise DeviceNotConnectedError(f"{self} is not connected.")
 
         # 分离机械臂位置指令和底盘速度指令
-        arm_goal_pos = {k: v for k, v in action.items() if k.endswith(".pos")}
+        left_arm_goal_pos = {k: v for k, v in action.items() if k.endswith(".pos")  and k.startswith("arm_left_")}
+        right_arm_goal_pos = {k: v for k, v in action.items() if k.endswith(".pos") and k.startswith("arm_right_")}
         base_goal_vel = {k: v for k, v in action.items() if k.endswith(".vel")}
 
         # 将机体速度转换为轮子原始速度
         base_wheel_goal_vel = self._body_to_wheel_raw(
-            base_goal_vel["x.vel"], base_goal_vel["y.vel"], base_goal_vel["theta.vel"]
+            base_goal_vel["x.vel"], 
+            base_goal_vel["y.vel"], 
+            base_goal_vel["theta.vel"]
         )
 
         # 当目标位置距离当前位置太远时，限制目标位置
         # 注意：由于需要从跟随者读取数据，预计帧率会降低
-        if self.config.max_relative_target is not None:
-            present_pos = self.bus.sync_read("Present_Position", self.arm_motors)
-            goal_present_pos = {key: (g_pos, present_pos[key]) for key, g_pos in arm_goal_pos.items()}
-            arm_safe_goal_pos = ensure_safe_goal_position(goal_present_pos, self.config.max_relative_target)
-            arm_goal_pos = arm_safe_goal_pos
+        if left_arm_goal_pos and self.config.max_relative_target is not None:
+            # 读取当前位置
+            present_left = self.left_bus.sync_read("Present_Position", self.left_arm_motors)
+            # 读取目标位置
+            gp_left = {key: (g_pos, present_left[key]) for key, g_pos in left_arm_goal_pos.items()}
+            # 确保在安全范围内运行
+            left_safe_goal_pos = ensure_safe_goal_position(gp_left, self.config.max_relative_target)
+            left_arm_goal_pos = left_safe_goal_pos
+
+        if self.right_bus and right_arm_goal_pos and self.config.max_relative_target is not None:
+            # 读取当前位置
+            present_right = self.right_bus.sync_read("Present_Position", self.right_arm_motors)
+            # 读取目标位置
+            gp_right = {key: (g_pos, present_right[key]) for key, g_pos in right_arm_goal_pos.items()}
+            # 确保在安全范围内运行
+            right_safe_goal_pos = ensure_safe_goal_position(gp_right, self.config.max_relative_target)
+            right_arm_goal_pos = right_safe_goal_pos
 
         # 发送目标位置到执行器
-        arm_goal_pos_raw = {k.replace(".pos", ""): v for k, v in arm_goal_pos.items()}
-        self.bus.sync_write("Goal_Position", arm_goal_pos_raw)        # 发送位置指令给机械臂
-        self.bus.sync_write("Goal_Velocity", base_wheel_goal_vel)    # 发送速度指令给底盘
+        if left_arm_goal_pos is not None:
+            self.left_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in left_arm_goal_pos.items()}) # 发送位置指令给机械臂
+        if self.right_bus and right_arm_goal_pos:
+            self.right_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in right_arm_goal_pos.items()}) # 发送位置指令给机械臂
+        self.left_bus.sync_write("Goal_Velocity", base_wheel_goal_vel) # 发送速度指令给底盘
 
-        return {**arm_goal_pos, **base_goal_vel}  # 返回实际发送的动作
+        return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel}  # 返回实际发送的动作
 
     def stop_base(self):
         """停止底盘运动（急停功能）"""
-        self.bus.sync_write("Goal_Velocity", dict.fromkeys(self.base_motors, 0), num_retry=5)
-        logger.info("Base motors stopped")
+        self.left_bus.sync_write("Goal_Velocity", dict.fromkeys(self.base_motors, 0), num_retry=5)
+        logger.info("已发送底盘停止指令！")
+
+    def read_and_check_currents(self, limit_ma, print_currents):
+        """读取左右bus的电流 (mA), 打印电流值, 并施加过电流保护"""
+        scale = 6.5  # sts3215 电流单位转换系数
+        left_curr_raw = {}
+        left_curr_raw = self.left_bus.sync_read("Present_Current", list(self.left_bus.motors.keys()))
+        right_curr_raw = {}
+        if getattr(self, "right_bus", None):
+            right_curr_raw = self.right_bus.sync_read("Present_Current", list(self.right_bus.motors.keys()))
+
+        if print_currents:
+            left_line = "{" + ",".join(str(int(v * scale)) for v in left_curr_raw.values()) + "}"
+            print(f"Left Bus currents: {left_line}")
+            if right_curr_raw:
+                right_line = "{" + ",".join(str(int(v * scale)) for v in right_curr_raw.values()) + "}"
+                print(f"Right Bus currents: {right_line}")
+
+        for name, raw in {**left_curr_raw, **right_curr_raw}.items():
+            current_ma = float(raw) * scale
+            if current_ma > limit_ma:
+                print(f"[Overcurrent] {name}: {current_ma:.1f} mA > {limit_ma:.1f} mA, disconnecting!")
+                try:
+                    self.stop_base()
+                except Exception:
+                    pass
+                try:
+                    self.disconnect()
+                except Exception as e:
+                    print(f"[Overcurrent] disconnect error: {e}")
+                sys.exit(1)
+
+        return {k: round(v * scale, 1) for k, v in {**left_curr_raw, **right_curr_raw}.items()}
+
 
     def disconnect(self):
         """断开机器人连接并清理资源"""
