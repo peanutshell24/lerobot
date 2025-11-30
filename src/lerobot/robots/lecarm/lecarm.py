@@ -284,9 +284,10 @@ class Lecarm(Robot):
 
         # 将校准数据写入电机并保存到文件
         self.left_bus.write_calibration(self.left_calibration)
-        self.left_bus.calibration = calib_left
+        self.left_bus.calibration = self.left_calibration
         if getattr(self, "right_bus", None):
             self.right_bus.write_calibration(self.right_calibration)
+            self.right_bus.calibration = self.right_calibration
         self._save_calibration()
         print("校准已保存到", self.calibration_fpath)
 
@@ -629,7 +630,8 @@ class Lecarm(Robot):
             raise DeviceNotConnectedError(f"{self} is not connected.")
 
         self.stop_base()  # 先停止底盘
-        self.bus.disconnect(self.config.disable_torque_on_disconnect)  # 断开电机连接
+        self.right_bus.disconnect(self.config.disable_torque_on_disconnect)
+        self.left_bus.disconnect(self.config.disable_torque_on_disconnect)  # 断开电机连接
         for cam in self.cameras.values():
             cam.disconnect()  # 断开摄像头连接
 
