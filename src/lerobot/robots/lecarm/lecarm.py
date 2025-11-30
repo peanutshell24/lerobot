@@ -185,6 +185,10 @@ class Lecarm(Robot):
 
     def calibrate(self) -> None:
         """执行电机校准流程"""
+
+        # 在方法开头初始化变量，此处逻辑有点混乱，暂时这样写，要修改
+        calib_left = {}
+        calib_right = {}
         if self.calibration:
             # 如果已有校准文件，询问用户是否使用它
             user_input = input(
