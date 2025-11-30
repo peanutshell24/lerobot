@@ -23,14 +23,14 @@ from ..config import RobotConfig
 #########《《《这一部分代码指定机器人的基础配置类》》》##############（start）
 def lecarm_cameras_config() -> dict[str, CameraConfig]: # 定义摄像头的类型还有串口地址
     return {
-        "front": OpenCVCameraConfig(
-            index_or_path="/dev/video0", fps=30, width=640, height=480, rotation=Cv2Rotation.ROTATE_180
-        ),
+        #"front": OpenCVCameraConfig(
+        #    index_or_path="/dev/video0", fps=30, width=640, height=480, rotation=Cv2Rotation.ROTATE_180
+        #),
         "wrist_left": OpenCVCameraConfig(
-            index_or_path="/dev/video2", fps=30, width=480, height=640, rotation=Cv2Rotation.ROTATE_90
+            index_or_path="/dev/video0", fps=30, width=480, height=640, rotation=Cv2Rotation.ROTATE_90
         ),
         "wrist_right": OpenCVCameraConfig(
-            index_or_path="/dev/video4", fps=30, width=480, height=640, rotation=Cv2Rotation.ROTATE_90
+            index_or_path="/dev/video2", fps=30, width=480, height=640, rotation=Cv2Rotation.ROTATE_90
         ),
     }
 

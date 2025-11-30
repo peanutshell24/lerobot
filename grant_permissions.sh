@@ -2,7 +2,7 @@
 
 # 授权脚本：grant_permissions.sh
 # 需要授权的设备列表，请根据您的实际设备名修改（如 /dev/video0, /dev/ttyUSB0 等）
-DEVICES=("/dev/ttyACM0" "/dev/video0" "/dev/video2")
+DEVICES=("/dev/ttyACM0" "/dev/ttyACM1" "/dev/video0" "/dev/video2" "/dev/video4")
 
 echo "正在为以下设备设置读写权限..."
 for DEVICE in "${DEVICES[@]}"; do
