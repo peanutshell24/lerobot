@@ -705,6 +705,18 @@ class MotorsBus(abc.ABC):
         self.reset_calibration(motors)
         actual_positions = self.sync_read("Present_Position", motors, normalize=False)
         homing_offsets = self._get_half_turn_homings(actual_positions)
+
+        # 添加边界检查
+        max_magnitude = 2047  # 最大幅度值
+        for motor, offset in homing_offsets.items():
+            # 检查偏移量是否超出范围
+            if abs(offset) > max_magnitude:
+                print(f"警告: 电机 {motor} 的偏移量 {offset} 超出最大范围 ±{max_magnitude}")
+                # 将偏移量限制在允许范围内
+                limited_offset = max_magnitude if offset > 0 else -max_magnitude
+                print(f"已将偏移量限制为 {limited_offset}")
+                homing_offsets[motor] = limited_offset
+
         for motor, offset in homing_offsets.items():
             self.write("Homing_Offset", motor, offset)
 
