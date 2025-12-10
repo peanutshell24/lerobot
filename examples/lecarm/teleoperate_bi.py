@@ -27,8 +27,8 @@ if USE_DUMMY:
 # 给leader臂配置
 robot_config = LecarmClientConfig(remote_ip=args.remote_ip, id="my_lecarm")
 bi_cfg = BiSO101LeaderConfig(
-    left_arm_port="/dev/ttyACM0",
-    right_arm_port="/dev/ttyACM1",
+    left_arm_port="/dev/ttyACM1",
+    right_arm_port="/dev/ttyACM0",
     id="so101_leader_bi",
 )
 leader = BiSO101Leader(bi_cfg)
