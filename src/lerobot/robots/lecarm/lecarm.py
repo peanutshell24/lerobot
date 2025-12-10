@@ -220,7 +220,7 @@ class Lecarm(Robot):
                     calib_right = {k: v for k, v in self.calibration.items() if k in self.right_bus.motors}
                     self.right_bus.write_calibration(calib_right, cache=False)
                     self.right_bus.calibration = calib_right
-
+                print(f"使用现有校准文件完成: 左总线 {len(calib_left)} 个电机, 右总线 {len(calib_right)} 个电机")
                 return
                 
         logger.info(f"\n运行 {self} 的双总线校准")
