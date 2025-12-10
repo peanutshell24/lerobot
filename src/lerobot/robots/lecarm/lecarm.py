@@ -160,13 +160,28 @@ class Lecarm(Robot):
         # 连接所有总线
         self.left_bus.connect()
         self.right_bus.connect()
-        
+        # 确保校准数据被加载到电机总线
+        print("确保校准数据被加载到电机总线...")
+        if self.calibration:
+            # 过滤出属于左总线的电机校准数据
+            left_calib = {k: v for k, v in self.calibration.items() if k in self.left_bus.motors}
+            self.left_bus.calibration = left_calib
+            print(f"左总线校准数据已设置: {len(left_calib)} 个电机")
+            
+            if hasattr(self, "right_bus") and self.right_bus is not None:
+                right_calib = {k: v for k, v in self.calibration.items() if k in self.right_bus.motors}
+                self.right_bus.calibration = right_calib
+                print(f"右总线校准数据已设置: {len(right_calib)} 个电机")
+        else:
+            print("警告: 没有找到校准数据")
+
         # 如果未校准且需要校准，则执行校准流程
         if not self.is_calibrated and calibrate:
             logger.info(
                 "电机中的校准值与校准文件中的值不匹配或未找到校准文件"
             )
             self.calibrate()
+        # 确保校准数据被加载到电机总线
 
         # 连接所有摄像头
         for cam in self.cameras.values():
