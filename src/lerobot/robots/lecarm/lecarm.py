@@ -70,11 +70,13 @@ class Lecarm(Robot):
                 "arm_left_wrist_roll": Motor(5, "sts3215", norm_mode_body),        # 腕部旋转关节
                 "arm_left_gripper": Motor(6, "sts3215", MotorNormMode.RANGE_0_100),# 夹爪（特殊范围0-100）
 
-                # 底盘电机 - 4个麦克纳姆轮
-                "base_front_left_wheel": Motor(7, "sts3215", MotorNormMode.RANGE_M100_100), #底盘左前轮
-                "base_front_right_wheel": Motor(8, "sts3215", MotorNormMode.RANGE_M100_100),#底盘右前轮
-                "base_rear_left_wheel": Motor(9, "sts3215", MotorNormMode.RANGE_M100_100),  #底盘左后轮
-                "base_rear_right_wheel": Motor(10, "sts3215", MotorNormMode.RANGE_M100_100),#底盘右后轮
+                # 底盘电机 - 4个麦克纳姆轮,地盘进行暂时的屏蔽
+                
+                # "base_front_left_wheel": Motor(7, "sts3215", MotorNormMode.RANGE_M100_100), #底盘左前轮
+                # "base_front_right_wheel": Motor(8, "sts3215", MotorNormMode.RANGE_M100_100),#底盘右前轮
+                # "base_rear_left_wheel": Motor(9, "sts3215", MotorNormMode.RANGE_M100_100),  #底盘左后轮
+                # "base_rear_right_wheel": Motor(10, "sts3215", MotorNormMode.RANGE_M100_100),#底盘右后轮
+                
                 
             },
             calibration=self.calibration,  # 校准数据
@@ -98,7 +100,7 @@ class Lecarm(Robot):
         # 按功能分类电机名称
         self.right_arm_motors = [motor for motor in self.right_bus.motors if motor.startswith("arm_right")]    # 机械右臂电机列表
         self.left_arm_motors  = [motor for motor in self.left_bus.motors if motor.startswith("arm_left")]    # 机械右臂电机列表
-        self.base_motors = [motor for motor in self.left_bus.motors if motor.startswith("base")]  # 底盘电机列表
+        #self.base_motors = [motor for motor in self.left_bus.motors if motor.startswith("base")]  # 底盘电机列表
         
         # 根据配置创建摄像头对象
         self.cameras = make_cameras_from_configs(config.cameras)
@@ -121,10 +123,11 @@ class Lecarm(Robot):
                 "arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
                 "arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
                 "arm_left_gripper.pos",       # 左边夹爪位置
-
-                "x.vel",                 # X轴速度（前进/后退）
-                "y.vel",                 # Y轴速度（左右平移）
-                "theta.vel",             # 旋转角速度
+                
+                #暂时屏蔽底盘
+                #"x.vel",                 # X轴速度（前进/后退）
+                #"y.vel",                 # Y轴速度（左右平移）
+                #"theta.vel",             # 旋转角速度
             ),
             float,  # 所有特征都是浮点数类型
         )
@@ -160,20 +163,6 @@ class Lecarm(Robot):
         # 连接所有总线
         self.left_bus.connect()
         self.right_bus.connect()
-        # 确保校准数据被加载到电机总线
-        print("确保校准数据被加载到电机总线...")
-        if self.calibration:
-            # 过滤出属于左总线的电机校准数据
-            left_calib = {k: v for k, v in self.calibration.items() if k in self.left_bus.motors}
-            self.left_bus.calibration = left_calib
-            print(f"左总线校准数据已设置: {len(left_calib)} 个电机")
-            
-            if hasattr(self, "right_bus") and self.right_bus is not None:
-                right_calib = {k: v for k, v in self.calibration.items() if k in self.right_bus.motors}
-                self.right_bus.calibration = right_calib
-                print(f"右总线校准数据已设置: {len(right_calib)} 个电机")
-        else:
-            print("警告: 没有找到校准数据")
 
         # 如果未校准且需要校准，则执行校准流程
         if not self.is_calibrated and calibrate:
@@ -202,8 +191,8 @@ class Lecarm(Robot):
         """执行电机校准流程"""
 
         # 在方法开头初始化变量，此处逻辑有点混乱，暂时这样写，要修改
-        calib_left = {}
-        calib_right = {}
+        # calib_left = {}
+        # calib_right = {}
         if self.calibration:
             # 如果已有校准文件，询问用户是否使用它
             user_input = input(
@@ -231,7 +220,8 @@ class Lecarm(Robot):
             logger.warning("右总线未配置，跳过右臂校准")
 
         # 获取所有电机的名称，用于分类而已，右bus的电机可以不分类
-        left_motors = self.left_arm_motors + self.base_motors
+        #left_motors = self.left_arm_motors + self.base_motors
+        left_motors = self.left_arm_motors
         right_motors= self.right_arm_motors
 
         # 禁用左机械臂扭矩以便手动移动
@@ -255,9 +245,9 @@ class Lecarm(Robot):
         l_range_mins, l_range_maxes = self.left_bus.record_ranges_of_motion(unknown_range_motors)
 
         # 设置全旋转电机的范围（0-4095，对应0-360度）这个只针对底盘的四个电机
-        for name in full_turn_motor:
-            l_range_mins[name] = 0
-            l_range_maxes[name] = 4095
+        # for name in full_turn_motor:
+        #     l_range_mins[name] = 0
+        #     l_range_maxes[name] = 4095
 
         # 创建右臂的空字典
         right_homing_offsets = {}
@@ -276,11 +266,10 @@ class Lecarm(Robot):
             r_range_mins, r_range_maxes = self.right_bus.record_ranges_of_motion(self.right_arm_motors)
 
         # 创建校准数据字典
-        self.left_calibration = {}
-        self.right_calibration = {}
+        self.calibration = {}
 
         for name, motor in self.left_bus.motors.items():
-            self.left_calibration[name] = MotorCalibration(
+            self.calibration[name] = MotorCalibration(
                 id=motor.id,                # 电机ID
                 drive_mode=0,               # 驱动模式
                 homing_offset=left_homing_offsets.get(name, 0), # 归零偏移
@@ -289,7 +278,7 @@ class Lecarm(Robot):
             )
         if getattr(self, "right_bus", None):
             for name, motor in self.right_bus.motors.items():
-                self.right_calibration[name] = MotorCalibration(
+                self.calibration[name] = MotorCalibration(
                     id=motor.id,                # 电机ID
                     drive_mode=0,               # 驱动模式
                     homing_offset=right_homing_offsets.get(name, 0), # 归零偏移
@@ -298,11 +287,15 @@ class Lecarm(Robot):
                 )
 
         # 将校准数据写入电机并保存到文件
-        self.left_bus.write_calibration(self.left_calibration)
-        self.left_bus.calibration = self.left_calibration
+        calib_left = {k: v for k, v in self.calibration.items() if k in self.left_bus.motors}
+        self.left_bus.write_calibration(calib_left, cache=False)
+        self.left_bus.calibration = calib_left
+
         if getattr(self, "right_bus", None):
-            self.right_bus.write_calibration(self.right_calibration)
-            self.right_bus.calibration = self.right_calibration
+            calib_right = {k: v for k, v in self.calibration.items() if k in self.right_bus.motors}
+            self.right_bus.write_calibration(calib_right, cache=False)
+            self.right_bus.calibration = calib_right
+            
         self._save_calibration()
         print("校准已保存到", self.calibration_fpath)
 
@@ -333,8 +326,8 @@ class Lecarm(Robot):
             self.right_bus.write("D_Coefficient", name, 32)
 
         # 配置底盘电机为速度模式
-        for name in self.base_motors:
-            self.left_bus.write("Operating_Mode", name, OperatingMode.VELOCITY.value)
+        # for name in self.base_motors:
+        #     self.left_bus.write("Operating_Mode", name, OperatingMode.VELOCITY.value)
 
         # 启用所有电机扭矩
         self.left_bus.enable_torque()
@@ -516,23 +509,24 @@ class Lecarm(Robot):
         # 读取机械臂关节位置和底盘轮子速度
         start = time.perf_counter()
         left_arm_pos = self.left_bus.sync_read("Present_Position", self.left_arm_motors)  # 读取当前位置寄存器
-        base_wheel_vel = self.left_bus.sync_read("Present_Velocity", self.base_motors)  # 读取当前速度寄存器
+        #base_wheel_vel = self.left_bus.sync_read("Present_Velocity", self.base_motors)  # 读取当前速度寄存器
         right_arm_pos = self.right_bus.sync_read("Present_Position", self.right_arm_motors)  # 读取当前位置寄存器
 
         # 将轮子原始速度转换为机体坐标系速度
-        base_vel = self._wheel_raw_to_body(
-            base_wheel_vel["base_front_left_wheel"],
-            base_wheel_vel["base_front_right_wheel"],
-            base_wheel_vel["base_rear_left_wheel"],
-            base_wheel_vel["base_rear_right_wheel"],
-        )
+        # base_vel = self._wheel_raw_to_body(
+        #     base_wheel_vel["base_front_left_wheel"],
+        #     base_wheel_vel["base_front_right_wheel"],
+        #     base_wheel_vel["base_rear_left_wheel"],
+        #     base_wheel_vel["base_rear_right_wheel"],
+        # )
 
         # 格式化机械臂状态数据（添加.pos后缀）
         left_arm_state = {f"{k}.pos": v for k, v in left_arm_pos.items()}
         right_arm_state = {f"{k}.pos": v for k, v in right_arm_pos.items()}
 
         # 合并状态数据
-        obs_dict = {**left_arm_state, **right_arm_state,**base_vel}
+        #obs_dict = {**left_arm_state, **right_arm_state,**base_vel}
+        obs_dict = {**left_arm_state, **right_arm_state}
 
         # 记录读取耗时
         dt_ms = (time.perf_counter() - start) * 1e3
@@ -563,14 +557,14 @@ class Lecarm(Robot):
         # 分离机械臂位置指令和底盘速度指令
         left_arm_goal_pos = {k: v for k, v in action.items() if k.endswith(".pos")  and k.startswith("arm_left_")}
         right_arm_goal_pos = {k: v for k, v in action.items() if k.endswith(".pos") and k.startswith("arm_right_")}
-        base_goal_vel = {k: v for k, v in action.items() if k.endswith(".vel")}
+        #base_goal_vel = {k: v for k, v in action.items() if k.endswith(".vel")}
 
         # 将机体速度转换为轮子原始速度
-        base_wheel_goal_vel = self._body_to_wheel_raw(
-            base_goal_vel["x.vel"], 
-            base_goal_vel["y.vel"], 
-            base_goal_vel["theta.vel"]
-        )
+        # base_wheel_goal_vel = self._body_to_wheel_raw(
+        #     base_goal_vel["x.vel"], 
+        #     base_goal_vel["y.vel"], 
+        #     base_goal_vel["theta.vel"]
+        # )
 
         # 当目标位置距离当前位置太远时，限制目标位置
         # 注意：由于需要从跟随者读取数据，预计帧率会降低
@@ -597,13 +591,13 @@ class Lecarm(Robot):
             self.left_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in left_arm_goal_pos.items()}) # 发送位置指令给机械臂
         if self.right_bus and right_arm_goal_pos:
             self.right_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in right_arm_goal_pos.items()}) # 发送位置指令给机械臂
-        self.left_bus.sync_write("Goal_Velocity", base_wheel_goal_vel) # 发送速度指令给底盘
+        #self.left_bus.sync_write("Goal_Velocity", base_wheel_goal_vel) # 发送速度指令给底盘
 
-        return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel}  # 返回实际发送的动作
-
+        #return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel}  # 返回实际发送的动作
+        return {**left_arm_goal_pos, **right_arm_goal_pos}  # 返回实际发送的动作
     def stop_base(self):
         """停止底盘运动（急停功能）"""
-        self.left_bus.sync_write("Goal_Velocity", dict.fromkeys(self.base_motors, 0), num_retry=5)
+        #self.left_bus.sync_write("Goal_Velocity", dict.fromkeys(self.base_motors, 0), num_retry=5)
         logger.info("已发送底盘停止指令！")
 
     def read_and_check_currents(self, limit_ma, print_currents):

@@ -66,7 +66,7 @@ class LecarmHost:
 # 主函数
 def main():
     # 配置日志记录
-    logging.info("Configuring Lecarm")
+    logging.info("Config                    uring Lecarm")
     # 创建Lecarm机器人配置对象
     robot_config = LecarmConfig()
     # 创建Lecarm机器人实例
