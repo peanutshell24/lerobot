@@ -9,7 +9,7 @@ from lerobot.teleoperators.bi_so101_leader import BiSO101Leader, BiSO101LeaderCo
 from lerobot.utils.robot_utils import busy_wait
 from lerobot.utils.visualization_utils import init_rerun, log_rerun_data
 
-# ============ Parameter Section ============ #
+# ============ 填写运行参数 ============ #
 parser = argparse.ArgumentParser()
 parser.add_argument("--use_dummy", action="store_true", help="Do not connect robot, only print actions")
 parser.add_argument("--fps", type=int, default=30, help="Main loop frequency (frames per second)")
@@ -36,7 +36,7 @@ keyboard_config = KeyboardTeleopConfig(id="my_laptop_keyboard")
 keyboard = KeyboardTeleop(keyboard_config)
 robot = LecarmClient(robot_config)
 
-# Connection logic
+# 仿真控制逻辑
 if not USE_DUMMY:
     robot.connect()
 else:
