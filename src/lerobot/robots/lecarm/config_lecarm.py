@@ -38,8 +38,8 @@ def lecarm_cameras_config() -> dict[str, CameraConfig]: # 定义摄像头的类�
 @RobotConfig.register_subclass("lecarm")
 @dataclass
 class LecarmConfig(RobotConfig):
-    left_port:  str = "/dev/ttyACM2"    # 默认串口地址
-    right_port: str = "/dev/ttyACM3"    # 默认串口地址
+    left_port:  str = "/dev/lecarm_left"    # 默认串口地址
+    right_port: str = "/dev/lecarm_right"    # 默认串口地址
 
     disable_torque_on_disconnect: bool = True
 

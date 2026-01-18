@@ -27,10 +27,14 @@ if USE_DUMMY:
 # 给leader臂配置
 robot_config = LecarmClientConfig(remote_ip=args.remote_ip, id="my_lecarm")
 bi_cfg = BiSO101LeaderConfig(
-    left_arm_port="/dev/ttyACM1",
-    right_arm_port="/dev/ttyACM0",
+    left_arm_port="/dev/lecarm_left",
+    right_arm_port="/dev/lecarm_right",
     id="so101_leader_bi",
 )
+    # left_arm_port="/dev/ttyACM1",
+    # right_arm_port="/dev/ttyACM0",
+
+
 leader = BiSO101Leader(bi_cfg)
 keyboard_config = KeyboardTeleopConfig(id="my_laptop_keyboard")
 keyboard = KeyboardTeleop(keyboard_config)
