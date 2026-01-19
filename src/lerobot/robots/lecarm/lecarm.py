@@ -600,7 +600,7 @@ class Lecarm(Robot):
         # return {**left_arm_goal_pos, **right_arm_goal_pos}  # 返回实际发送的动作
     def stop_base(self):
         """停止底盘运动（急停功能）"""
-        #self.left_bus.sync_write("Goal_Velocity", dict.fromkeys(self.base_motors, 0), num_retry=5)
+        self.left_bus.sync_write("Goal_Velocity", dict.fromkeys(self.base_motors, 0), num_retry=5)
         logger.info("已发送底盘停止指令！")
 
     def read_and_check_currents(self, limit_ma, print_currents):
