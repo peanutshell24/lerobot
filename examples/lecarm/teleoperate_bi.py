@@ -31,8 +31,7 @@ bi_cfg = BiSO101LeaderConfig(
     right_arm_port="/dev/lecarm_right",
     id="so101_leader_bi",
 )
-    # left_arm_port="/dev/ttyACM1",
-    # right_arm_port="/dev/ttyACM0",
+
 
 
 leader = BiSO101Leader(bi_cfg)
