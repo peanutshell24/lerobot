@@ -17,7 +17,7 @@ class ChassisComm:
     - 发送令牌给1号后，不能再收发3号数据
     """
     
-    def __init__(self, serial_port='/dev/ttyS0', baudrate=115200):
+    def __init__(self, serial_port='/dev/ttyUSB0', baudrate=115200):
         """
         初始化串口
         :param serial_port: 串口路径
@@ -171,3 +171,5 @@ class ChassisComm:
         if self.ser:
             self.ser.close()
             print("[ChassisComm] 串口已关闭")
+
+shared_control = ChassisComm()

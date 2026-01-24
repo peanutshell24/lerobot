@@ -32,7 +32,7 @@ from lerobot.motors.feetech import (
 )
 from lerobot.utils.errors import DeviceAlreadyConnectedError, DeviceNotConnectedError  # 自定义错误类型
 
-from lerobot.motors.base_serial_control import ChassisComm
+from lerobot.motors.base_serial_control import shared_control
 
 from ..robot import Robot  # 机器人基类
 from ..utils import ensure_safe_goal_position  # 安全位置检查工具
@@ -240,7 +240,7 @@ class Lecarm(Robot):
         # 分类电机：全旋转电机和未知范围电机
         full_turn_motor = [motor for motor in left_motors if any(keyword in motor for keyword in ["wheel"])]
         unknown_range_motors = [motor for motor in left_motors if motor not in full_turn_motor]
-        print(f"依次移动所有机械臂关节，（除了 '{full_turn_motor}'）通过其整个运动范围。\n记录位置。按回车键停止...")
+        print(f"依次移动所有机械臂关节，除了 '{full_turn_motor}'）通过其整个运动范围。\n记录位置。按回车键停止...")
 
         # 记录未知范围电机的运动范围
         l_range_mins, l_range_maxes = self.left_bus.record_ranges_of_motion(unknown_range_motors)
@@ -512,7 +512,7 @@ class Lecarm(Robot):
         left_arm_pos = self.left_bus.sync_read("Present_Position", self.left_arm_motors)  # 读取当前位置寄存器
         #base_wheel_vel = self.left_bus.sync_read("Present_Velocity", self.base_motors)   # 读取当前速度寄存器
         right_arm_pos = self.right_bus.sync_read("Present_Position", self.right_arm_motors)  # 读取当前位置寄存器
-        base_vel=ChassisComm.receive_base_state()#直接通过底盘串口去读取底盘的速度值
+        base_vel=shared_control.receive_base_state()#直接通过底盘串口去读取底盘的速度值
 
         # 将轮子原始速度转换为机体坐标系速度
         # base_vel = self._wheel_raw_to_body(
@@ -595,15 +595,15 @@ class Lecarm(Robot):
         if self.right_bus and right_arm_goal_pos:
             self.right_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in right_arm_goal_pos.items()}) # 发送位置指令给机械臂
         if base_goal_vel:
-            ChassisComm.send_base_action( base_goal_vel) # 发送指令给底盘
+            shared_control.send_base_action( base_goal_vel) # 发送指令给底盘
         #self.left_bus.sync_write("Goal_Velocity", base_wheel_goal_vel) # 发送速度指令给底盘
 
         #return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel}  # 返回实际发送的动作
         return {**left_arm_goal_pos, **right_arm_goal_pos}  # 返回实际发送的动作
     def stop_base(self):
         """停止底盘运动（急停功能）"""
-        #ChassisComm.send_base_action(dict.fromkeys(self.base_motors, 0), num_retry=5) #写到这里，这个部分需要详细修改一下
-        ChassisComm.send_base_action(
+        #shared_control.send_base_action(dict.fromkeys(self.base_motors, 0), num_retry=5) #写到这里，这个部分需要详细修改一下
+        shared_control.send_base_action(
             {
             'x.vel': 0.0,
             'y.vel': 0.0,

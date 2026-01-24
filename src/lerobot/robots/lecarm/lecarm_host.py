@@ -26,6 +26,7 @@ import zmq     # ZeroMQ消息队列库
 # 从本地模块导入配置类和机器人类
 from .config_lecarm import LecarmConfig, LecarmHostConfig  # Lecarm配置类
 from .lecarm import Lecarm  # Lecarm机器人类
+from lerobot.motors.base_serial_control import shared_control
 
 # 定义Lecarm主机类，负责与远程客户端通信和控制机器人
 class LecarmHost:
@@ -67,6 +68,11 @@ class LecarmHost:
 def main():
     # 配置日志记录
     logging.info("Config uring Lecarm")
+    #等待令牌
+    while not shared_control.check_and_acquire_token():
+        time.sleep(0.1)
+    print("￥￥成功获取令牌！￥￥")
+
     # 创建Lecarm机器人配置对象
     robot_config = LecarmConfig()
     # 创建Lecarm机器人实例
@@ -89,6 +95,7 @@ def main():
     
     # 主循环开始
     logging.info("Waiting for commands...")
+
     try:
         # 记录循环开始时间
         start = time.perf_counter()
@@ -180,6 +187,8 @@ def main():
         host.disconnect()
     
     # 程序结束提示
+    base_control.release_token_to_master()
+    print("令牌已归还")
     logging.info("Finished Lecarm cleanly")
 
 
