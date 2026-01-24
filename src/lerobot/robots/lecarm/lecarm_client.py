@@ -100,9 +100,9 @@ class LecarmClient(Robot):
                 "arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
                 "arm_left_gripper.pos",       # 左边夹爪位置
 
-                # "x.vel",                 # X轴速度（前进/后退）
-                # "y.vel",                 # Y轴速度（左右平移）
-                # "theta.vel",             # 旋转角速度
+                 "x.vel",                 # X轴速度（前进/后退）
+                 "y.vel",                 # Y轴速度（左右平移）
+                 "theta.vel",             # 旋转角速度
             ),
             float,  # 所有状态值都是浮点数
         )
