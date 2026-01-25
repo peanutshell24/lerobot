@@ -22,6 +22,7 @@ from itertools import chain  # 迭代器工具
 from typing import Any  # 类型注解
 
 import numpy as np  # 数值计算库
+import sys
 
 # 从自定义模块导入所需组件
 from lerobot.cameras.utils import make_cameras_from_configs  # 摄像头工具
@@ -56,6 +57,7 @@ class Lecarm(Robot):
         """初始化Lecarm机器人实例"""
         super().__init__(config)  # 调用父类初始化
         self.config = config  # 保存配置对象
+        self.use_base_control = True #在这里设置是否启用底盘的控制
         
         # 根据配置决定使用角度模式还是范围模式
         norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100
@@ -110,31 +112,35 @@ class Lecarm(Robot):
     @property
     def _state_ft(self) -> dict[str, type]:
         """定义状态观测的特征类型字典（关节位置和底盘速度）"""
-        return dict.fromkeys(
-            (
-                "arm_right_shoulder_pan.pos",  # 右边肩部平移关节位置
-                "arm_right_shoulder_lift.pos", # 右边肩部抬升关节位置
-                "arm_right_elbow_flex.pos",    # 右边肘部弯曲关节位置
-                "arm_right_wrist_flex.pos",    # 右边腕部弯曲关节位置
-                "arm_right_wrist_roll.pos",    # 右边腕部旋转关节位置
-                "arm_right_gripper.pos",       # 右边夹爪位置
+        joint_keys = [
+        "arm_right_shoulder_pan.pos",  # 右边肩部平移关节位置
+        "arm_right_shoulder_lift.pos", # 右边肩部抬升关节位置
+        "arm_right_elbow_flex.pos",    # 右边肘部弯曲关节位置
+        "arm_right_wrist_flex.pos",    # 右边腕部弯曲关节位置
+        "arm_right_wrist_roll.pos",    # 右边腕部旋转关节位置
+        "arm_right_gripper.pos",       # 右边夹爪位置
 
-                "arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
-                "arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
-                "arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
-                "arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
-                "arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
-                "arm_left_gripper.pos",       # 左边夹爪位置
-                
-                #底盘的观测量设置回去
-                #但是不再由原先的串口bus提供这一部分
-                "x.vel",                 # X轴速度（前进/后退）
-                "y.vel",                 # Y轴速度（左右平移）
-                "theta.vel",             # 旋转角速度
-                #"robot.high",            # 机器人的高度
-            ),
-            float,  # 所有特征都是浮点数类型
-        )
+        "arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
+        "arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
+        "arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
+        "arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
+        "arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
+        "arm_left_gripper.pos",       # 左边夹爪位置
+    ]
+    
+        # 根据设定决定是否添加底盘键
+        if self.use_base_control:  # 你的判断条件
+            chassis_keys = [
+                "x.vel",        # X轴速度（前进/后退）
+                "y.vel",        # Y轴速度（左右平移）
+                "theta.vel",    # 旋转角速度
+            ]
+            all_keys = joint_keys + chassis_keys
+        else:
+            all_keys = joint_keys
+        
+        # 创建字典，所有值都为 float
+        return dict.fromkeys(all_keys, float)
 
     @property
     def _cameras_ft(self) -> dict[str, tuple]:
@@ -560,7 +566,8 @@ class Lecarm(Robot):
         # 分离机械臂位置指令和底盘速度指令
         left_arm_goal_pos = {k: v for k, v in action.items() if k.endswith(".pos")  and k.startswith("arm_left_")}
         right_arm_goal_pos = {k: v for k, v in action.items() if k.endswith(".pos") and k.startswith("arm_right_")}
-        base_goal_vel = {k: v for k, v in action.items() if k.endswith(".vel")}
+        if self.use_base_control:
+            base_goal_vel = {k: v for k, v in action.items() if k.endswith(".vel")}
 
         # 将机体速度转换为轮子原始速度
         # base_wheel_goal_vel = self._body_to_wheel_raw(
@@ -594,12 +601,13 @@ class Lecarm(Robot):
             self.left_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in left_arm_goal_pos.items()}) # 发送位置指令给机械臂
         if self.right_bus and right_arm_goal_pos:
             self.right_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in right_arm_goal_pos.items()}) # 发送位置指令给机械臂
-        if base_goal_vel:
+        if base_goal_vel and self.use_base_control:
             shared_control.send_base_action( base_goal_vel) # 发送指令给底盘
         #self.left_bus.sync_write("Goal_Velocity", base_wheel_goal_vel) # 发送速度指令给底盘
-
-        #return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel}  # 返回实际发送的动作
-        return {**left_arm_goal_pos, **right_arm_goal_pos}  # 返回实际发送的动作
+        if self.use_base_control:
+            return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel}  # 返回实际发送的动作
+        else:
+            return {**left_arm_goal_pos, **right_arm_goal_pos}  # 返回实际发送的动作
     def stop_base(self):
         """停止底盘运动（急停功能）"""
         #shared_control.send_base_action(dict.fromkeys(self.base_motors, 0), num_retry=5) #写到这里，这个部分需要详细修改一下

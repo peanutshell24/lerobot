@@ -37,6 +37,7 @@ class LecarmClient(Robot):
     
     config_class = LecarmClientConfig  # 配置类
     name = "lecarm_client"  # 机器人名称标识
+    Robot.use_base_control = True
 
     def __init__(self, config: LecarmClientConfig):
         """初始化 LeCARM 客户端"""
@@ -84,28 +85,35 @@ class LecarmClient(Robot):
     @cached_property
     def _state_ft(self) -> dict[str, type]:
         """定义状态特征的类型（浮点数）"""
-        return dict.fromkeys(
-            (
-                "arm_right_shoulder_pan.pos",  # 右边肩部平移关节位置
-                "arm_right_shoulder_lift.pos", # 右边肩部抬升关节位置
-                "arm_right_elbow_flex.pos",    # 右边肘部弯曲关节位置
-                "arm_right_wrist_flex.pos",    # 右边腕部弯曲关节位置
-                "arm_right_wrist_roll.pos",    # 右边腕部旋转关节位置
-                "arm_right_gripper.pos",       # 右边夹爪位置
+        joint_keys = [
+        "arm_right_shoulder_pan.pos",  # 右边肩部平移关节位置
+        "arm_right_shoulder_lift.pos", # 右边肩部抬升关节位置
+        "arm_right_elbow_flex.pos",    # 右边肘部弯曲关节位置
+        "arm_right_wrist_flex.pos",    # 右边腕部弯曲关节位置
+        "arm_right_wrist_roll.pos",    # 右边腕部旋转关节位置
+        "arm_right_gripper.pos",       # 右边夹爪位置
 
-                "arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
-                "arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
-                "arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
-                "arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
-                "arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
-                "arm_left_gripper.pos",       # 左边夹爪位置
-
-                 "x.vel",                 # X轴速度（前进/后退）
-                 "y.vel",                 # Y轴速度（左右平移）
-                 "theta.vel",             # 旋转角速度
-            ),
-            float,  # 所有状态值都是浮点数
-        )
+        "arm_left_shoulder_pan.pos",  # 左边肩部平移关节位置
+        "arm_left_shoulder_lift.pos", # 左边肩部抬升关节位置
+        "arm_left_elbow_flex.pos",    # 左边肘部弯曲关节位置
+        "arm_left_wrist_flex.pos",    # 左边腕部弯曲关节位置
+        "arm_left_wrist_roll.pos",    # 左边腕部旋转关节位置
+        "arm_left_gripper.pos",       # 左边夹爪位置
+    ]
+    
+        # 根据设定决定是否添加底盘键
+        if Robot.use_base_control:  # 你的判断条件
+            chassis_keys = [
+                "x.vel",        # X轴速度（前进/后退）
+                "y.vel",        # Y轴速度（左右平移）
+                "theta.vel",    # 旋转角速度
+            ]
+            all_keys = joint_keys + chassis_keys
+        else:
+            all_keys = joint_keys
+        
+        # 创建字典，所有值都为 float
+        return dict.fromkeys(all_keys, float)
 
     @cached_property
     def _state_order(self) -> tuple[str, ...]:
