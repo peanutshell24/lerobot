@@ -73,6 +73,7 @@ while True:
         print(f"[USE_DUMMY] action → {action}")
     else:
         robot.send_action(action)
-        print(f"Sent action → {action}")
+        #print(f"Sent action → {action}")
+        print(f"Sent base_action → {base_action}")
 
     busy_wait(max(1.0 / FPS - (time.perf_counter() - t0), 0.0))

@@ -187,7 +187,7 @@ def main():
         host.disconnect()
     
     # 程序结束提示
-    base_control.release_token_to_master()
+    shared_control.release_token_to_master()
     print("令牌已归还")
     logging.info("Finished Lecarm cleanly")
 

@@ -33,7 +33,7 @@ from lerobot.motors.feetech import (
 )
 from lerobot.utils.errors import DeviceAlreadyConnectedError, DeviceNotConnectedError  # 自定义错误类型
 
-from lerobot.motors.base_serial_control import shared_control
+#from lerobot.motors.base_serial_control import shared_control
 
 from ..robot import Robot  # 机器人基类
 from ..utils import ensure_safe_goal_position  # 安全位置检查工具

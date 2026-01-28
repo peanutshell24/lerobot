@@ -2,6 +2,7 @@
 import json
 import serial
 from typing import Dict, Any, Optional
+import time    # 时间相关功能
 
 class ChassisComm:
     """
@@ -116,25 +117,37 @@ class ChassisComm:
         
         :return: 底盘状态字典 或 None
         """
+            # 构建令牌释放消息
+        get_obs_msg = {
+            "type": self.get_observation_cmd,
+            "data":None
+        }
+        
+        json_str = json.dumps(get_obs_msg) + '\n'
+        self.ser.write(json_str.encode())
+        print("观测请求已经发送")
+
         if not self.has_token:
+            print("没有令牌，无法接收反馈")
             return None  # 没有令牌，直接返回None
             
         try:
-            message = {
-                "type": "req_observation",
-                "data": None
-            }
-            json_str = json.dumps(message) + '\n'
-            self.ser.write(json_str.encode())
+            while not self.ser.in_waiting:
+                time.sleep(0.02)
             if self.ser.in_waiting > 0:
                 line = self.ser.readline()
                 if line:
                     json_str = line.decode().strip()
+                    print(f"[DEBUG] 2号收到原始数据: '{json_str}'")  # 调试输出
                     if json_str:
                         msg = self._parse_message(json_str)
-                        return msg.get("data")
-            
-            return None
+                        if msg:
+                            print(f"[DEBUG] 2号解析消息: {msg}")  # 调试输出
+                            if msg.get("type") == self.get_obs_message:
+                                return msg.get("data")
+                        else:
+                            print(f"[DEBUG] JSON解析失败: {json_str}")
+
             
         except Exception as e:
             print(f"[Lecarm] 接收底盘状态错误: {e}")
