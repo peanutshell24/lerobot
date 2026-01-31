@@ -38,6 +38,7 @@ class LecarmClient(Robot):
     config_class = LecarmClientConfig  # 配置类
     name = "lecarm_client"  # 机器人名称标识
     Robot.use_base_control = True
+    Robot.use_shaft_control = False
 
     def __init__(self, config: LecarmClientConfig):
         """初始化 LeCARM 客户端"""
@@ -72,9 +73,9 @@ class LecarmClient(Robot):
 
         # 速度级别配置（慢/中/快）
         self.speed_levels = [
-            {"xy": 0.1, "theta": 30},  # 慢速
-            {"xy": 0.2, "theta": 60},  # 中速
-            {"xy": 0.3, "theta": 90},  # 快速
+            {"xy": 0.1, "theta": 30, "high":0.1},  # 慢速
+            {"xy": 0.2, "theta": 60, "high":0.1},  # 中速
+            {"xy": 0.3, "theta": 90, "high":0.1},  # 快速
         ]
         self.speed_index = 0  # 当前速度级别索引（初始为慢速）
 
@@ -101,16 +102,24 @@ class LecarmClient(Robot):
         "arm_left_gripper.pos",       # 左边夹爪位置
     ]
     
-        # 根据设定决定是否添加底盘键
         if Robot.use_base_control:  # 你的判断条件
             chassis_keys = [
                 "x.vel",        # X轴速度（前进/后退）
                 "y.vel",        # Y轴速度（左右平移）
                 "theta.vel",    # 旋转角速度
             ]
-            all_keys = joint_keys + chassis_keys
+            keys_joint_and_base = joint_keys + chassis_keys
         else:
-            all_keys = joint_keys
+            keys_joint_and_base = joint_keys
+        # 根据设定决定是否添加升降轴
+        if Robot.use_shaft_control:  # 你的判断条件
+            shaft_keys = [
+                "left_arm_high.vel",        # 左臂的高度
+                "right_arm_high.vel",       # 右臂的高度
+            ]
+            all_keys = keys_joint_and_base + shaft_keys
+        else:
+            all_keys = keys_joint_and_base
         
         # 创建字典，所有值都为 float
         return dict.fromkeys(all_keys, float)
@@ -339,11 +348,14 @@ class LecarmClient(Robot):
         speed_setting = self.speed_levels[self.speed_index]
         xy_speed = speed_setting["xy"]  # XY 平面速度
         theta_speed = speed_setting["theta"]  # 旋转速度（度/秒）
+        high_speed = speed_setting["high"]
         
         # 初始化速度命令
         x_cmd = 0.0  # 前进/后退速度 (m/s)
         y_cmd = 0.0  # 横向速度 (m/s)
         theta_cmd = 0.0  # 旋转速度 (deg/s)
+        left_high_cmd = 0.0
+        right_high_cmd = 0.0
         
         # 根据按键设置速度
         if self.teleop_keys["forward"] in pressed_keys:
@@ -358,12 +370,22 @@ class LecarmClient(Robot):
             theta_cmd += theta_speed  # 左旋
         if self.teleop_keys["rotate_right"] in pressed_keys:
             theta_cmd -= theta_speed  # 右旋
-            
+        if self.teleop_keys["left_up"] in pressed_keys:
+            left_high_cmd += high_speed  # 左上升
+        if self.teleop_keys["left_down"] in pressed_keys:
+            left_high_cmd -= high_speed  # 左下降        
+        if self.teleop_keys["right_up"] in pressed_keys:
+            right_high_cmd += high_speed  # 右上升
+        if self.teleop_keys["right_down"] in pressed_keys:
+            right_high_cmd -= high_speed  # 右下降 
+
         # 返回速度命令字典
         return {
             "x.vel": x_cmd,
             "y.vel": y_cmd,
             "theta.vel": theta_cmd,
+            "left_arm_high.vel":left_high_cmd,
+            "right_arm_high.vel":right_high_cmd,
         }
 
     def configure(self):

@@ -33,7 +33,7 @@ from lerobot.motors.feetech import (
 )
 from lerobot.utils.errors import DeviceAlreadyConnectedError, DeviceNotConnectedError  # 自定义错误类型
 
-#from lerobot.motors.base_serial_control import shared_control
+from lerobot.motors.base_serial_control import shared_control #在PC端运行的时候，注释掉这一句
 
 from ..robot import Robot  # 机器人基类
 from ..utils import ensure_safe_goal_position  # 安全位置检查工具
@@ -57,7 +57,9 @@ class Lecarm(Robot):
         """初始化Lecarm机器人实例"""
         super().__init__(config)  # 调用父类初始化
         self.config = config  # 保存配置对象
-        self.use_base_control = True #在这里设置是否启用底盘的控制
+        self.use_base_control = True      # 是否启用底盘的控制
+        self.use_lifting_shaft = True     # 是否启用升降轴控制
+        self.use_currents_checker = False # 是否启动舵机电流打印
         
         # 根据配置决定使用角度模式还是范围模式
         norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100
@@ -135,9 +137,18 @@ class Lecarm(Robot):
                 "y.vel",        # Y轴速度（左右平移）
                 "theta.vel",    # 旋转角速度
             ]
-            all_keys = joint_keys + chassis_keys
+            keys_joint_and_base = joint_keys + chassis_keys
         else:
-            all_keys = joint_keys
+            keys_joint_and_base = joint_keys
+        # 根据设定决定是否添加升降轴
+        if self.use_lifting_shaft:  # 你的判断条件
+            shaft_keys = [
+                "left_arm_high.vel",        # 左臂的高度
+                "right_arm_high.vel",       # 右臂的高度
+            ]
+            all_keys = keys_joint_and_base + shaft_keys
+        else:
+            all_keys = keys_joint_and_base
         
         # 创建字典，所有值都为 float
         return dict.fromkeys(all_keys, float)
@@ -518,7 +529,7 @@ class Lecarm(Robot):
         left_arm_pos = self.left_bus.sync_read("Present_Position", self.left_arm_motors)  # 读取当前位置寄存器
         #base_wheel_vel = self.left_bus.sync_read("Present_Velocity", self.base_motors)   # 读取当前速度寄存器
         right_arm_pos = self.right_bus.sync_read("Present_Position", self.right_arm_motors)  # 读取当前位置寄存器
-        base_vel=shared_control.receive_base_state()#直接通过底盘串口去读取底盘的速度值
+        base_vel=shared_control.receive_base_state(use_shaft=False)#直接通过底盘串口去读取底盘的速度值，当启动升降轴时，也会接收到升降轴的数据
 
         # 将轮子原始速度转换为机体坐标系速度
         # base_vel = self._wheel_raw_to_body(
@@ -542,7 +553,7 @@ class Lecarm(Robot):
         logger.debug(f"{self} read state: {dt_ms:.1f}ms")
 
         # 电流监测
-        self.read_and_check_currents(limit_ma=2000, print_currents=False)#实际运行的时候，如果不想监测电流，可以把这里设置成False
+        self.read_and_check_currents(limit_ma=2000, print_currents=self.use_currents_checker)
 
         # 从摄像头捕获图像
         for cam_key, cam in self.cameras.items():
@@ -568,6 +579,8 @@ class Lecarm(Robot):
         right_arm_goal_pos = {k: v for k, v in action.items() if k.endswith(".pos") and k.startswith("arm_right_")}
         if self.use_base_control:
             base_goal_vel = {k: v for k, v in action.items() if k.endswith(".vel")}
+        if self.use_lifting_shaft:
+            shaft_goal_high = {k: v for k, v in action.items() if k.endswith(".high")}
 
         # 将机体速度转换为轮子原始速度
         # base_wheel_goal_vel = self._body_to_wheel_raw(
@@ -601,13 +614,15 @@ class Lecarm(Robot):
             self.left_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in left_arm_goal_pos.items()}) # 发送位置指令给机械臂
         if self.right_bus and right_arm_goal_pos:
             self.right_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in right_arm_goal_pos.items()}) # 发送位置指令给机械臂
-        if base_goal_vel and self.use_base_control:
-            shared_control.send_base_action( base_goal_vel) # 发送指令给底盘
+        #分不同的情况跟底盘进行通讯
+        if base_goal_vel and shaft_goal_high :
+            shared_control.send_base_action( base_goal_vel + shaft_goal_high, use_shaft=True)
+            return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel, **shaft_goal_high}  # 返回实际发送的动作
+        elif base_goal_vel and not shaft_goal_high:
+            shared_control.send_base_action( base_goal_vel, use_shaft = False)
+            return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel}
         #self.left_bus.sync_write("Goal_Velocity", base_wheel_goal_vel) # 发送速度指令给底盘
-        if self.use_base_control:
-            return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel}  # 返回实际发送的动作
-        else:
-            return {**left_arm_goal_pos, **right_arm_goal_pos}  # 返回实际发送的动作
+        return {**left_arm_goal_pos, **right_arm_goal_pos}  # 返回实际发送的动作
     def stop_base(self):
         """停止底盘运动（急停功能）"""
         #shared_control.send_base_action(dict.fromkeys(self.base_motors, 0), num_retry=5) #写到这里，这个部分需要详细修改一下

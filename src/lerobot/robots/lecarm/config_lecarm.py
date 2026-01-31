@@ -87,13 +87,18 @@ class LecarmClientConfig(RobotConfig):
             "backward": "s",
             "left": "a",
             "right": "d",
-            "rotate_left": "z",
-            "rotate_right": "x",
+            "rotate_left": "q",
+            "rotate_right": "e",
             # Speed control
             "speed_up": "r",
             "speed_down": "f",
             # quit teleop
-            "quit": "q",
+            "quit": "o",
+            # shaft up and down
+            "left_up":"z",
+            "left_down":"x",
+            "right_up":"c",
+            "right_down":"v",
         }
     )
 
