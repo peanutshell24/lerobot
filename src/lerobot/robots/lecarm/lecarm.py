@@ -59,7 +59,7 @@ class Lecarm(Robot):
         self.config = config  # 保存配置对象
         self.use_base_control = True      # 是否启用底盘的控制
         self.use_lifting_shaft = True     # 是否启用升降轴控制
-        self.use_currents_checker = False # 是否启动舵机电流打印
+        self.use_currents_checker = True # 是否启动舵机电流打印
         
         # 根据配置决定使用角度模式还是范围模式
         norm_mode_body = MotorNormMode.DEGREES if config.use_degrees else MotorNormMode.RANGE_M100_100
@@ -529,7 +529,7 @@ class Lecarm(Robot):
         left_arm_pos = self.left_bus.sync_read("Present_Position", self.left_arm_motors)  # 读取当前位置寄存器
         #base_wheel_vel = self.left_bus.sync_read("Present_Velocity", self.base_motors)   # 读取当前速度寄存器
         right_arm_pos = self.right_bus.sync_read("Present_Position", self.right_arm_motors)  # 读取当前位置寄存器
-        base_vel=shared_control.receive_base_state(use_shaft=False)#直接通过底盘串口去读取底盘的速度值，当启动升降轴时，也会接收到升降轴的数据
+        base_vel=shared_control.receive_base_state(use_shaft=self.use_lifting_shaft)#直接通过底盘串口去读取底盘的速度值，当启动升降轴时，也会接收到升降轴的数据
 
         # 将轮子原始速度转换为机体坐标系速度
         # base_vel = self._wheel_raw_to_body(
@@ -616,10 +616,10 @@ class Lecarm(Robot):
             self.right_bus.sync_write("Goal_Position", {k.replace(".pos", ""): v for k, v in right_arm_goal_pos.items()}) # 发送位置指令给机械臂
         #分不同的情况跟底盘进行通讯
         if base_goal_vel and shaft_goal_high :
-            shared_control.send_base_action( base_goal_vel + shaft_goal_high, use_shaft=True)
+            shared_control.send_base_action( base_goal_vel + shaft_goal_high, use_shaft=self.use_lifting_shaft)
             return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel, **shaft_goal_high}  # 返回实际发送的动作
         elif base_goal_vel and not shaft_goal_high:
-            shared_control.send_base_action( base_goal_vel, use_shaft = False)
+            shared_control.send_base_action( base_goal_vel, use_shaft = self.use_lifting_shaft)
             return {**left_arm_goal_pos, **right_arm_goal_pos, **base_goal_vel}
         #self.left_bus.sync_write("Goal_Velocity", base_wheel_goal_vel) # 发送速度指令给底盘
         return {**left_arm_goal_pos, **right_arm_goal_pos}  # 返回实际发送的动作

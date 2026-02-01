@@ -33,8 +33,8 @@ class ChassisComm:
         self.req_control = "req_control"
         self.send_action_cmd_with_shaft = "cmd_vel_all"
         self.send_action_cmd_without_shaft = "cmd_vel_part"
-        self.get_obs_without_shaft_cmd = "req_observation"
-        self.get_obs_with_shaft_cmd = "req_observation"
+        self.get_obs_without_shaft_cmd = "req_observation_part"
+        self.get_obs_with_shaft_cmd = "req_observation_all"
         self.get_obs_message = "state"
         self.release_control = "rel_control"
         self.revoke_control = "revoke_control"
@@ -57,7 +57,33 @@ class ChassisComm:
             msg.get("type") == self.token_message
         )
     
-    
+    def check_and_acquire_token(self) -> bool:
+        try:
+            if self.has_token:
+                return True
+                
+            if self.ser.in_waiting > 0:
+                line = self.ser.readline()
+                if line:
+                    json_str = line.decode().strip()
+                    #print(f"[DEBUG] 2号收到原始数据: '{json_str}'")  # 调试输出
+                    if json_str:
+                        msg = self._parse_message(json_str)
+                        if msg:
+                            #print(f"[DEBUG] 2号解析消息: {msg}")  # 调试输出
+                            if self._is_token_message(msg):
+                                self.has_token = True
+                                print("[Lercarm] ✅ 已获取令牌，可以与底盘通信")
+                                return True
+                        else:
+                            print(f"[DEBUG] JSON解析失败: {json_str}")
+                
+            return False
+            
+        except Exception as e:
+            print(f" 检查令牌错误: {e}")
+            return False
+
     def send_base_action(self, command_dict: Dict[str, Any],use_shaft = False) -> bool:
         """
         发送控制命令到底盘（JSON字典）
@@ -101,12 +127,12 @@ class ChassisComm:
         """
         if use_shaft:
             get_obs_msg = {
-                "type": self.get_obs_without_shaft_cmd,
+                "type": self.get_obs_with_shaft_cmd,
                 "data":None
         }
         else:
             get_obs_msg = {
-                "type": self.get_obs_with_shaft_cmd,
+                "type": self.get_obs_without_shaft_cmd,
                 "data":None
             }
         
