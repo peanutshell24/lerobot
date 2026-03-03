@@ -38,7 +38,7 @@ class LecarmClient(Robot):
     config_class = LecarmClientConfig  # 配置类
     name = "lecarm_client"  # 机器人名称标识
     Robot.use_base_control = True
-    Robot.use_shaft_control = False
+    Robot.use_shaft_control = True
 
     def __init__(self, config: LecarmClientConfig):
         """初始化 LeCARM 客户端"""
@@ -73,9 +73,9 @@ class LecarmClient(Robot):
 
         # 速度级别配置（慢/中/快）
         self.speed_levels = [
-            {"xy": 0.1, "theta": 30, "high":0.1},  # 慢速
-            {"xy": 0.2, "theta": 60, "high":0.1},  # 中速
-            {"xy": 0.3, "theta": 90, "high":0.1},  # 快速
+            {"xy": 0.2, "theta": 1, "high":0.05},  # 慢速
+            {"xy": 0.3, "theta": 5, "high":0.05},  # 中速
+            {"xy": 0.4, "theta": 10, "high":0.05},  # 快速
         ]
         self.speed_index = 0  # 当前速度级别索引（初始为慢速）
 
@@ -354,8 +354,8 @@ class LecarmClient(Robot):
         x_cmd = 0.0  # 前进/后退速度 (m/s)
         y_cmd = 0.0  # 横向速度 (m/s)
         theta_cmd = 0.0  # 旋转速度 (deg/s)
-        left_high_cmd = 0.0
-        right_high_cmd = 0.0
+        left_high_cmd = 0.0 # 左边抬高速度 （m/s）
+        right_high_cmd = 0.0# 右边抬高速度 （m/s）
         
         # 根据按键设置速度
         if self.teleop_keys["forward"] in pressed_keys:

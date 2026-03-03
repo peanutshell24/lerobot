@@ -1,18 +1,3 @@
-# Copyright 2024 The HuggingFace Inc. team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# 该文件用于子类化机器人接口，下面会详细注释
 from dataclasses import dataclass, field
 
 from lerobot.cameras.configs import CameraConfig, Cv2Rotation
@@ -23,14 +8,14 @@ from ..config import RobotConfig
 #########《《《这一部分代码指定机器人的基础配置类》》》##############（start）
 def lecarm_cameras_config() -> dict[str, CameraConfig]: # 定义摄像头的类型还有串口地址
     return {
-        #"front": OpenCVCameraConfig(
+        #"fWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEront": OpenCVCameraConfig(
         #    index_or_path="/dev/video0", fps=30, width=640, height=480, rotation=Cv2Rotation.ROTATE_180
         #),
         "wrist_left": OpenCVCameraConfig(
-            index_or_path="/dev/video0", fps=30, width=480, height=640, rotation=Cv2Rotation.ROTATE_90
+            index_or_path="/dev/video0", fps=30, width=640, height=480, rotation=Cv2Rotation.NO_ROTATION
         ),
         "wrist_right": OpenCVCameraConfig(
-            index_or_path="/dev/video2", fps=30, width=480, height=640, rotation=Cv2Rotation.ROTATE_90
+            index_or_path="/dev/video4", fps=30, width=640, height=480, rotation=Cv2Rotation.NO_ROTATION
         ),
     }
 
@@ -38,7 +23,7 @@ def lecarm_cameras_config() -> dict[str, CameraConfig]: # 定义摄像头的类�
 @RobotConfig.register_subclass("lecarm")
 @dataclass
 class LecarmConfig(RobotConfig):
-    left_port:  str = "/dev/lecarm_left"    # 默认串口地址
+    left_port:  str = "/dev/lecarm_left"     # 默认串口地址
     right_port: str = "/dev/lecarm_right"    # 默认串口地址
 
     disable_torque_on_disconnect: bool = True

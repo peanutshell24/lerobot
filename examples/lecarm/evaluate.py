@@ -75,7 +75,7 @@ teleop_action_processor, robot_action_processor, robot_observation_processor = m
 
 # 初始化键盘监听器和可视化工具
 listener, events = init_keyboard_listener()  # 用于键盘控制
-init_rerun(session_name="lekiwi_evaluate")  # 初始化可视化
+init_rerun(session_name="lekiwi_evaluate")   # 初始化可视化
 
 # 检查机器人是否已连接
 if not robot.is_connected:
